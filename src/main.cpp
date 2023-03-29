@@ -16,9 +16,9 @@ using json = nlohmann::json;
 
 
 std::string to_upper(std::string& str) {
-    std::string result;
-    for (char& c : str) {
-        result = std::toupper(c);
+    std::string result = str;
+    for (char& c : result) {
+        c = std::toupper(c);
     }
     return result;
 }
@@ -48,11 +48,15 @@ std::shared_ptr<TokenList> TokenList::instance = std::make_shared<TokenList>(Tok
 
 static std::ofstream lexer_stream;
 static std::ofstream parser_stream;
+static std::ofstream ast_c_stream;
+static std::ofstream ast_h_stream;
 
 void init_directory_structure() {
     std::filesystem::create_directory("generated");
     lexer_stream.open("generated/lexer.l");
     parser_stream.open("generated/parser.y");
+    ast_c_stream.open("generated/Ast.c");
+    ast_h_stream.open("generated/Ast.h");
 
     try {
         std::filesystem::copy_file("templates/Makefile", "generated/Makefile");
@@ -78,11 +82,16 @@ void begin_lexer_parser() {
     parser_stream << R"(
 %{
 #include <stdio.h>
+#include "Ast.h"
 
 extern FILE* yyin;
 extern char* yytext;
 extern int yylineno;
 %}
+
+%union {
+    struct Ast_Node* node;
+}
 
 )";
     
@@ -181,6 +190,43 @@ int main(int argc, char** argv){
     LOG_INFO << "Finalizing lexer + parser.\n";
 }
 
+void generate_ast_h(json const& language_description) {
+    ast_h_stream << "#ifndef _AST_H_\n";
+    ast_h_stream << "#define _AST_H_\n\n";
+
+    std::vector<json> const rules = language_description["rules"];
+
+    // Note(AAL): generate enum for all tags
+    ast_h_stream << "typedef enum _Ast_Node_Type {\n";
+
+    for (json const& rule : rules) {
+        std::string  rule_name = rule["name"];
+        std::string const rule_id = "AST_NODE_" + to_upper(rule_name);
+        ast_h_stream << "    " << rule_id << ",\n";
+    }
+    ast_h_stream << "} Ast_Node_Type;\n\n";
+    // ================================
+
+    // Note: generate the struct and function declarations
+    ast_h_stream << R"(
+typedef struct _Ast_Node {
+    const char* name;
+    Ast_Node_Type type;
+    struct _Ast_Node* parent;
+    struct _Ast_Node* children;
+    struct _Ast_Node* next;
+} Ast_Node;
+
+)";
+
+
+    ast_h_stream << "#endif //! _AST_H_\n";
+}
+
+void generate_ast_c(json const& language_description) {
+    ast_c_stream << "#include \"Ast.h\"\n\n";
+}
+
 
 int main(int argc, char** argv) {
     (void)argc;
@@ -198,4 +244,6 @@ int main(int argc, char** argv) {
     generate_parser_options(language_description);
     generate_parser(language_description);
     finalize_lexer_parser();
+    generate_ast_h(language_description);
+    generate_ast_c(language_description);
 }
