@@ -1,0 +1,89 @@
+{
+    "tokens": [
+        { "name": "IF", "regex": "if"},
+        { "name": "LPAREN", "regex": "("},
+        { "name": "RPAREN", "regex": ")"},
+        { "name": "RBRACE", "regex": "}"},
+        { "name": "LBRACE", "regex": "{"},
+        { "name": "SEMICOLON", "regex": ";"},
+        { "name": "ATSIGN", "regex": "@"},
+        { "name": "BOOL_LITERAL_TRUE", "regex": "true"},
+        { "name": "BOOL_LITERAL_FALSE", "regex": "false"},
+        { "name": "INT_LITERAL", "regex": "[0-9]+"},
+        { "name": "IDENTIFIER", "regex": "[a-zA-Z_][a-zA-Z0-9_]*"},
+        { "name": "STRING_LITERAL", "regex": "\\\"[^\"]*\\\""}
+    ],
+    "rules": [
+        {
+            "name": "builtin",
+            "constructions": [
+                {
+                    "name": "builtin",
+                    "symbols": [
+                        "ATSIGN",
+                        "LBRACE",
+                        "IDENTIFIER",
+                        "LPAREN",
+                        "STRING_LITERAL",
+                        "RPAREN",
+                        "RBRACE"
+                    ]
+                } 
+            ]
+        },
+        {
+            "name": "program",
+            "constructions": [
+                {
+                    "tag": "program",
+                    "symbols": [
+                        "statement_list"
+                    ]
+                }
+            ]
+        },
+        {
+            "name": "statement_list",
+            "constructions": [
+                {
+                    "tag": "base statement_list",
+                    "symbols": [
+                        "statement"
+                    ]
+                },
+                {
+                    "tag": "statement_list",
+                    "symbols": [
+                        "statement",
+                        "statement_list"
+                    ]
+                }
+            ]
+        },
+        {
+            "name": "statement",
+            "constructions": [
+                {
+                    "tag": "if_statement",
+                    "symbols": [
+                        "IF",
+                        "LPAREN",
+                        "expression",
+                        "RPAREN",
+                        "LBRACE",
+                        "statement_list",
+                        "RBRACE"
+                    ]
+                },
+                {
+                    "tag": "builtin_statement",
+                    "symbols": [
+                        "builtin",
+                        "SEMICOLON"
+                    ]
+                }
+            ]
+        }
+    ],
+    "start_rule": "program"
+}
