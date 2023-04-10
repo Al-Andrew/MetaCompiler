@@ -1,24 +1,23 @@
 {
     "tokens": [
-        { "name": "IF", "regex": "if"},
-        { "name": "LPAREN", "regex": "("},
-        { "name": "RPAREN", "regex": ")"},
-        { "name": "RBRACE", "regex": "}"},
-        { "name": "LBRACE", "regex": "{"},
-        { "name": "SEMICOLON", "regex": ";"},
-        { "name": "ATSIGN", "regex": "@"},
-        { "name": "BOOL_LITERAL_TRUE", "regex": "true"},
-        { "name": "BOOL_LITERAL_FALSE", "regex": "false"},
-        { "name": "INT_LITERAL", "regex": "[0-9]+"},
-        { "name": "IDENTIFIER", "regex": "[a-zA-Z_][a-zA-Z0-9_]*"},
-        { "name": "STRING_LITERAL", "regex": "\\\"[^\"]*\\\""}
+        { "name": "IF", "matcher": "if", "is_regex": false},
+        { "name": "LPAREN", "matcher": "(", "is_regex": false},
+        { "name": "RPAREN", "matcher": ")", "is_regex": false},
+        { "name": "RBRACE", "matcher": "}", "is_regex": false},
+        { "name": "LBRACE", "matcher": "{", "is_regex": false},
+        { "name": "SEMICOLON", "matcher": ";", "is_regex": false},
+        { "name": "ATSIGN", "matcher": "@", "is_regex": false},
+        { "name": "BOOL_LITERAL_TRUE", "matcher": "true", "is_regex": false},
+        { "name": "BOOL_LITERAL_FALSE", "matcher": "false", "is_regex": false},
+        { "name": "IDENTIFIER", "matcher": "[a-zA-Z_][a-zA-Z0-9_]*", "is_regex": true},
+        { "name": "STRING_LITERAL", "matcher": "\\\"[^\\\"]*\\\"", "is_regex": true}
     ],
     "rules": [
         {
             "name": "builtin",
             "constructions": [
                 {
-                    "name": "builtin",
+                    "tag": "base",
                     "symbols": [
                         "ATSIGN",
                         "LBRACE",
@@ -27,7 +26,8 @@
                         "STRING_LITERAL",
                         "RPAREN",
                         "RBRACE"
-                    ]
+                    ],
+                    "action" : "$2($4)"
                 } 
             ]
         },
@@ -35,10 +35,11 @@
             "name": "program",
             "constructions": [
                 {
-                    "tag": "program",
+                    "tag": "base",
                     "symbols": [
                         "statement_list"
-                    ]
+                    ],
+                    "action" : "#include <stdio.h>\\n#include <stdlib.h>\\n#include <stdbool.h>\\n\\nint main() {\\n $0 return 0;\\n}"
                 }
             ]
         },
@@ -46,17 +47,19 @@
             "name": "statement_list",
             "constructions": [
                 {
-                    "tag": "base statement_list",
+                    "tag": "base",
                     "symbols": [
                         "statement"
-                    ]
+                    ],
+                    "action" : "$0;"
                 },
                 {
-                    "tag": "statement_list",
+                    "tag": "recursive",
                     "symbols": [
                         "statement",
                         "statement_list"
-                    ]
+                    ],
+                    "action" : "$0\\n$1"
                 }
             ]
         },
@@ -73,14 +76,35 @@
                         "LBRACE",
                         "statement_list",
                         "RBRACE"
-                    ]
+                    ],
+                    "action" : "if ($2) {\\n $5\\n}"
                 },
                 {
                     "tag": "builtin_statement",
                     "symbols": [
                         "builtin",
                         "SEMICOLON"
-                    ]
+                    ],
+                    "action" : "$0"
+                }
+            ]
+        },
+        {
+            "name": "expression",
+            "constructions": [
+                {
+                    "tag": "bool_literal_true",
+                    "symbols": [
+                        "BOOL_LITERAL_TRUE"
+                    ],
+                    "action" : "$0"
+                },
+                {
+                    "tag": "bool_literal_false",
+                    "symbols": [
+                        "BOOL_LITERAL_FALSE"
+                    ],
+                    "action" : "$0"
                 }
             ]
         }
