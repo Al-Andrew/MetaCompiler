@@ -92,6 +92,7 @@ void begin_lexer_parser() {
 %{
 #include <stdio.h>
 #include "Ast.h"
+#include "Rules.h"
 
 extern FILE* yyin;
 extern char* yytext;
@@ -218,6 +219,10 @@ int main(int argc, char** argv){
     yyparse();
     printf("Parsing complete.\n\n");
     ast_node_print(ast_root, 0);
+
+    FILE* stream = fopen("translated.c", "w");
+    translate_AST_NODE(stream, ast_root);
+    return 0;
 }
 )";
 
@@ -399,7 +404,7 @@ typedef void (*rule_apply_fn)(FILE* stream, Ast_Node* node);
 void translate_AST_NODE_SIMPLE_TOKEN(FILE* stream, Ast_Node* node);
 
 void translate_AST_NODE(FILE* stream, Ast_Node* node);
-extern rule_apply_fn rule_apply_fn_AST_NODE[)" << rules.size() << "];\n\n";
+extern rule_apply_fn rule_apply_fn_AST_NODE[)" << rules.size() + 1 << "];\n\n";
 
     for (json const& rule : rules) {
         std::string rule_name = rule["name"];
@@ -458,6 +463,32 @@ void translate_AST_NODE(FILE* stream, Ast_Node* node) {
 
             rules_c_stream << "void translate_" << rule_id << "_" << construction_id << "(FILE* stream, Ast_Node* node) {\n";
             // TODO(AAL): parse out the translation out of the construction and generate the code here
+            
+            
+            std::string const action = construction["action"];
+            std::stringstream action_istream{action};
+            std::stringstream action_ostream{};
+
+            std::string slice;
+            char c;
+            while(action_istream.get(c), action_istream.good()) {
+                if(c == '$') {
+                    slice = action_ostream.str();
+                    action_ostream.clear();
+                    action_ostream.str(std::string());
+                    if(slice.size() > 0)
+                        rules_c_stream << "    fprintf(stream, \"" << slice << "\");\n";
+                    int idx;
+                    action_istream >> idx;
+                    rules_c_stream << "translate_AST_NODE(stream, node->children[" << idx << "]);\n";
+                } else {
+                    action_ostream << c;
+                }
+            }
+            slice = action_ostream.str();
+            if(slice.size() > 0)
+                rules_c_stream << "    fprintf(stream, \"" << slice << "\");\n";
+            
             rules_c_stream << "}\n\n";
         }
 
@@ -471,7 +502,15 @@ void translate_AST_NODE(FILE* stream, Ast_Node* node) {
         }
         rules_c_stream << "};\n\n";
     }
+    // the rule_apply_fn_AST_NODE table
+    rules_c_stream << "rule_apply_fn rule_apply_fn_AST_NODE[" << rules.size() + 1 << "] = {\n    translate_AST_NODE_SIMPLE_TOKEN,\n";
+    for(auto const& rule : rules) {
+        std::string const rule_name = rule["name"];
+        std::string const rule_id = "AST_NODE_" + to_upper(rule_name);
 
+        rules_c_stream << "    translate_" << rule_id << ",\n";
+    }
+    rules_c_stream << "};\n\n";
 }
 
 
