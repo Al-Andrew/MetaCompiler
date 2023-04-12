@@ -102,14 +102,14 @@
                     "symbols": [
                         "BOOL_LITERAL_TRUE"
                     ],
-                    "action" : "$0"
+                    "action" : "true"
                 },
                 {
                     "tag": "bool_literal_false",
                     "symbols": [
                         "BOOL_LITERAL_FALSE"
                     ],
-                    "action" : "$0"
+                    "action" : "false"
                 }
             ]
         }
