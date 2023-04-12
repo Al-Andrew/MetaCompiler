@@ -58,16 +58,16 @@ static std::ofstream rules_c_stream;
 static std::ofstream rules_h_stream;
 static std::ofstream makefile_stream;
 
-void init_directory_structure() {
-    std::filesystem::create_directory("generated");
-    std::filesystem::create_directory("generated/src");
-    lexer_stream.open("generated/src/lexer.l");
-    parser_stream.open("generated/src/parser.y");
-    ast_c_stream.open("generated/src/Ast.c");
-    ast_h_stream.open("generated/src/Ast.h");
-    rules_c_stream.open("generated/src/Rules.c");
-    rules_h_stream.open("generated/src/Rules.h");
-    makefile_stream.open("generated/xmake.lua");
+void init_directory_structure(std::string output_directory) {
+    std::filesystem::create_directory(output_directory);
+    std::filesystem::create_directory(output_directory + "/src");
+    lexer_stream.open(output_directory + "/src/lexer.l");
+    parser_stream.open(output_directory + "/src/parser.y");
+    ast_c_stream.open(output_directory + "/src/Ast.c");
+    ast_h_stream.open(output_directory + "/src/Ast.h");
+    rules_c_stream.open(output_directory + "/src/Rules.c");
+    rules_h_stream.open(output_directory + "/src/Rules.h");
+    makefile_stream.open(output_directory + "/xmake.lua");
 
     LOG_INFO << "Created directory structure.\n";
 }
@@ -542,16 +542,23 @@ target(")" << language_name << R"(")
 }
 
 int main(int argc, char** argv) {
-    (void)argc;
-    (void)argv;
+
+    if(argc != 3) {
+        std::cerr << "Usage: " << argv[0] << " <language_description.json> <output-folder>\n";
+        return 1;
+    }
+    std::string const language_description_path = argv[1];
+    std::string const output_folder = argv[2];
+
+    LOG_INFO << "Generating code for language description: " << language_description_path << " in folder: " << output_folder << "\n";
 
     json language_description{}; 
     
-    std::ifstream ifs{"simple_ld.json"};
+    std::ifstream ifs{language_description_path};
     ifs >> language_description;
     ifs.close();
 
-    init_directory_structure();
+    init_directory_structure(output_folder);
     begin_lexer_parser();
     generate_lexer(language_description);
     generate_parser_options(language_description);
