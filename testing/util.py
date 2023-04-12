@@ -31,3 +31,27 @@ def get_availalbe_tests(tests_dir: str) -> tuple[list[int], dict[int, str]]:
     
     return tests_availalbe, tests_number_to_path_map
 
+
+def compare_files(actual_outputs_path: str, expected_outputs_path: str) -> bool:
+    """
+    Compares two files line by line.
+    Returns True if the files are identical, False otherwise.
+    """
+
+    to_compare = [
+        (actual_outputs_path + '/stdout', expected_outputs_path + '/stdout'),
+        (actual_outputs_path + '/stderr', expected_outputs_path + '/stderr'),
+        (actual_outputs_path + '/code', expected_outputs_path + '/code'),
+    ]
+
+    for actual_output_path, expected_output_path in to_compare:
+        with open(actual_output_path, 'r') as actual_output_file:
+            actual_output = actual_output_file.read()
+        
+        with open(expected_output_path, 'r') as expected_output_file:
+            expected_output = expected_output_file.read()
+        
+        if actual_output != expected_output:
+            return False
+    
+    return True

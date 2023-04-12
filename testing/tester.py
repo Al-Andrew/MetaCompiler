@@ -99,16 +99,24 @@ def run_test(test_number: int, test_path: str) -> Test_Result:
     except FileExistsError:
         pass
     
-    for assertion_number, assertion_name in enumerate(os.listdir(inputs_dir_path)):
+    compiler_output_path = os.path.join('/tmp', f'{test_full_name}_compiler_generated')
+
+    os.system(f'{Config.path_to_mc_exe} {test_path}/ld.json {compiler_output_path} > {test_outputs_dir_path}/generation.stdout 2> {test_outputs_dir_path}/generation.stderr')
+    os.system(f'cd {compiler_output_path}; xmake build')
+
+    compiler_exe_path = os.path.join(compiler_output_path, 'build', 'linux', 'x86_64', 'release', 'compiler')
+
+    for assertion_name in os.listdir(inputs_dir_path):
         assertion_input_path = os.path.join(inputs_dir_path, assertion_name)
         assertion_expected_output_path = os.path.join(expected_outputs_dir_path, assertion_name)
+
     
-        assertion_results.append(run_assertion(test_outputs_dir_path, assertion_input_path, assertion_expected_output_path))
+        assertion_results.append(run_assertion(test_outputs_dir_path, compiler_exe_path, assertion_input_path, assertion_expected_output_path))
     
     return Test_Result(test_number, test_full_name, assertion_results)
 
 
-def run_assertion(test_output_path: str, assertion_input_path: str, assertion_expected_output_path: str) -> Assertion_Result:
+def run_assertion(test_output_path: str, compiler_exe_path: str, assertion_input_path: str, assertion_expected_output_path: str) -> Assertion_Result:
     assertion_number = int(os.path.basename(assertion_input_path).split('_')[0])
     logging.info('    Running assertion: #%d', assertion_number)
 
@@ -121,19 +129,18 @@ def run_assertion(test_output_path: str, assertion_input_path: str, assertion_ex
     except FileExistsError:
         pass
 
-    assertion_stdout_path = assertion_output_path + '.stdout'
-    assertion_stderr_path = assertion_output_path + '.stderr'
-    assertion_code_path = assertion_output_path + '.code'
+    assertion_stdout_path = assertion_output_path + '/stdout'
+    assertion_stderr_path = assertion_output_path + '/stderr'
+    assertion_code_path = assertion_output_path + '/code'
 
     start_time = time.time()
 
-    # TODO (AAL):
-    #os.system(f'{Config.path_to_mc_exe} {assertion_input_path} -o {assertion_code_path} > {assertion_input_path}.stdout 2> {assertion_input_path}.stderr')
+    os.system(f'{compiler_exe_path} {assertion_input_path} {assertion_code_path} > {assertion_stdout_path} 2> {assertion_stderr_path}')
 
     end_time = time.time()
     assertion_time = end_time - start_time
 
-    assertion_success = True # TODO (AAL): util.compare_files(assertion_code_path, assertion_expected_output_path)
+    assertion_success = util.compare_files(assertion_output_path, assertion_expected_output_path)
     if assertion_success:
         logging.info('        Assertion #%d success!', assertion_number)
     else:
