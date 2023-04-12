@@ -18,7 +18,7 @@ class Exit_Codes(enum.Enum):
 def init_logging() -> None:
     coloredlogs.install(
         level='DEBUG',
-        fmt='%(asctime)s [%(levelname)s] %(message)s',
+        fmt='%(asctime)s [%(levelname)8s] %(message)s',
         datefmt='%H:%M:%S'
     )
 
@@ -134,7 +134,11 @@ def run_assertion(test_output_path: str, assertion_input_path: str, assertion_ex
     assertion_time = end_time - start_time
 
     assertion_success = True # TODO (AAL): util.compare_files(assertion_code_path, assertion_expected_output_path)
-    logging.info('        Assertion #%d %s', assertion_number, 'passed' if assertion_success else 'failed')
+    if assertion_success:
+        logging.info('        Assertion #%d success!', assertion_number)
+    else:
+        logging.error('        Assertion #%d failed!', assertion_number)
+    
     logging.info('        Assertion #%d time: %.3f', assertion_number, assertion_time)
 
     return Assertion_Result(assertion_number, assertion_name, assertion_success)
