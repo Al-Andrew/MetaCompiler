@@ -1,4 +1,9 @@
 {
+    "meta" : {
+        "name" : "MClisp",
+        "bin" : "mcl",
+        "version" : "0.1.0"
+    },
     "tokens": [
         { "name": "IF", "matcher": "if", "is_regex": false},
         { "name": "LPAREN", "matcher": "(", "is_regex": false},
