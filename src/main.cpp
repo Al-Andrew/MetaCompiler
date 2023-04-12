@@ -542,6 +542,7 @@ target(")" << language_name << R"(")
         os.run("mv y.tab.h y.tab.c src/")
         os.run("lex src/lexer.l")
         os.run("mv lex.yy.c src/")
+        os.run("sleep 1")
     end)
 
     add_files("src/Ast.c", "src/Rules.c", "src/lex.yy.c", "src/y.tab.c")
