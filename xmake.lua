@@ -3,6 +3,7 @@ add_requires("nlohmann_json")
 
 set_warnings("all")
 add_languages("c++20")
+set_version("0.1.0")
 
 target("meta_compiler")
     set_filename("mc")

@@ -56,24 +56,20 @@ static std::ofstream ast_c_stream;
 static std::ofstream ast_h_stream;
 static std::ofstream rules_c_stream;
 static std::ofstream rules_h_stream;
+static std::ofstream makefile_stream;
 
 void init_directory_structure() {
     std::filesystem::create_directory("generated");
-    lexer_stream.open("generated/lexer.l");
-    parser_stream.open("generated/parser.y");
-    ast_c_stream.open("generated/Ast.c");
-    ast_h_stream.open("generated/Ast.h");
-    rules_c_stream.open("generated/Rules.c");
-    rules_h_stream.open("generated/Rules.h");
-
-    try {
-        std::filesystem::copy_file("templates/Makefile", "generated/Makefile");
-    } catch (std::filesystem::filesystem_error const& e) {
-        LOG_INFO << "Failed to copy Makefile: " << e.what() << '\n';
-    }
+    std::filesystem::create_directory("generated/src");
+    lexer_stream.open("generated/src/lexer.l");
+    parser_stream.open("generated/src/parser.y");
+    ast_c_stream.open("generated/src/Ast.c");
+    ast_h_stream.open("generated/src/Ast.h");
+    rules_c_stream.open("generated/src/Rules.c");
+    rules_h_stream.open("generated/src/Rules.h");
+    makefile_stream.open("generated/xmake.lua");
 
     LOG_INFO << "Created directory structure.\n";
-
 }
 
 
@@ -300,7 +296,7 @@ const char* ast_node_type_to_string(Ast_Node_Type type);
 void generate_ast_c(json const& language_description) {
     ast_c_stream << R"(
 #include "Ast.h"
-#include "temp/y.tab.h"
+#include "y.tab.h"
 
 #include "string.h"
 #include "stdio.h"  
@@ -514,6 +510,37 @@ void translate_AST_NODE(FILE* stream, Ast_Node* node) {
 }
 
 
+void generate_makefile(json const& language_description) {
+    json const meta = language_description["meta"];
+
+    std::string const language_name = meta["name"];
+    std::string const language_version = meta["version"];
+    std::string const bin_name = meta["bin"];
+
+    makefile_stream << 
+R"(
+add_rules("mode.debug", "mode.release")
+
+set_warnings("all")
+add_languages("c17")
+set_version(")" << language_version << R"(")
+
+target(")" << language_name << R"(")
+    set_filename(")" << bin_name << R"(")
+    set_kind("binary")
+
+    before_build(function (target)
+        os.run("yacc -d src/parser.y")
+        os.run("mv y.tab.h y.tab.c src/")
+        os.run("lex src/lexer.l")
+        os.run("mv lex.yy.c src/")
+    end)
+
+    add_files("src/Ast.c", "src/Rules.c", "src/lex.yy.c", "src/y.tab.c")
+)";
+
+}
+
 int main(int argc, char** argv) {
     (void)argc;
     (void)argv;
@@ -534,4 +561,5 @@ int main(int argc, char** argv) {
     generate_ast_c(language_description);
     generate_rules_h(language_description);
     generate_rules_c(language_description);
+    generate_makefile(language_description);
 }
