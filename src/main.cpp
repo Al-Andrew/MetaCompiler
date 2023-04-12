@@ -211,12 +211,18 @@ int yyerror(char * s) {
 }
 
 int main(int argc, char** argv){
+    
+    if(argc < 3) {
+        printf("Usage: %s <input_file> <output_file>\n", argv[0]);
+        return 1;
+    }
+    
     yyin=fopen(argv[1],"r");
     yyparse();
     printf("Parsing complete.\n\n");
     ast_node_print(ast_root, 0);
 
-    FILE* stream = fopen("translated.c", "w");
+    FILE* stream = fopen(argv[2], "w");
     translate_AST_NODE(stream, ast_root);
     return 0;
 }
@@ -270,7 +276,7 @@ typedef struct _Ast_Node {
     Ast_Node_Type type;
     uint32_t tag;
     const char* name;
-    const char* value;
+    char* value;
 
     struct _Ast_Node* parent;
     struct _Ast_Node** children;
@@ -328,7 +334,9 @@ Ast_Node* ast_node_new_token(const char* name, const char* value) {
     Ast_Node* node = (Ast_Node*)malloc(sizeof(Ast_Node));
     node->name = name;
     node->type = AST_NODE_SIMPLE_TOKEN;
-    node->value = strdup(value);
+    node->value = (char*)malloc(sizeof(char) * (strlen(value) + 1));
+    strcpy(node->value, value);
+    node->tag = 0;
     node->parent = NULL;
     node->children = NULL;
     
