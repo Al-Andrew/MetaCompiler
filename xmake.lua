@@ -11,3 +11,8 @@ target("meta_compiler")
     add_files("src/main.cpp")
 
     add_packages("nlohmann_json")
+
+    after_build(function (target)
+        os.mkdir("bin")
+        os.cp(target:targetfile(), "bin/")
+    end)

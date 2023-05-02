@@ -12,7 +12,7 @@
 #include "nlohmann/json.hpp"
 using json = nlohmann::json;
 
-#define LOG_INFO std::clog << "[INFO] [" << __FUNCTION__ << ':' << __LINE__ << "] "
+#define LOG_INFO std::clog << "[INFO] [" << __FILE__ << ':' << __LINE__ << "] "
 
 
 std::string to_upper(std::string const& str) {
@@ -564,6 +564,9 @@ int main(int argc, char** argv) {
     json language_description{}; 
     
     std::ifstream ifs{language_description_path};
+    // std::string text;
+    // ifs >> text;
+    // LOG_INFO << "text " << text << "\n";
     ifs >> language_description;
     ifs.close();
 

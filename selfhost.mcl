@@ -1,0 +1,17 @@
+(module Test
+
+  (func print-i8 (what i8) (
+    (embed (
+      printf("%d\n", what)
+    ))
+  ))
+
+  ((func start) main (
+    (let i 8i8)
+    (let j 9i8)
+    (let k 0i8)
+    (print k)
+    (= k (+ i j))
+    (print k)
+  ))
+)

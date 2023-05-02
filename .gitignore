@@ -6,3 +6,4 @@ compile_commands.json
 demo/
 testing/tests/.outputs
 testing/__pycache__
+bin/
