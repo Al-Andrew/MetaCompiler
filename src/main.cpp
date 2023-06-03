@@ -1,49 +1,54 @@
+#include "nlohmann/json.hpp"
+
 #include <cctype>
 #include <cstdio>
-#include <map>
-#include <memory>
+#include <filesystem>
 #include <fstream>
 #include <iostream>
-#include <vector>
-#include <string>
-#include <filesystem>
+#include <map>
+#include <memory>
 #include <set>
-
-#include "nlohmann/json.hpp"
+#include <string>
+#include <vector>
 using json = nlohmann::json;
 
 #define LOG_INFO std::clog << "[INFO] [" << __FILE__ << ':' << __LINE__ << "] "
 
-
-std::string to_upper(std::string const& str) {
+std::string
+to_upper(std::string const &str) {
     std::string result = str;
-    for (char& c : result) {
+    for (char &c : result) {
         c = std::toupper(c);
     }
     return result;
 }
 
-std::string rule_name_and_tag_to_tagid(std::string const& rule_name, std::string const& tag) {
+std::string
+rule_name_and_tag_to_tagid(std::string const &rule_name, std::string const &tag) {
     return std::string{"TAG_ID_"} + to_upper(rule_name) + "_" + to_upper(tag);
 }
 
 struct TokenList {
-    std::set<std::string> valid_tokens;
+    std::set<std::string>             valid_tokens;
     static std::shared_ptr<TokenList> instance;
 
-    static std::shared_ptr<TokenList> the() {
+    static std::shared_ptr<TokenList>
+    the() {
         return instance;
     }
 
-    void add_token(std::string const& token) {
+    void
+    add_token(std::string const &token) {
         valid_tokens.insert(token);
     }
 
-    bool is_valid_token(std::string const& token) {
+    bool
+    is_valid_token(std::string const &token) {
         return valid_tokens.find(token) != valid_tokens.end();
     }
 
-    static std::string symbol_name_to_token_id(std::string const& symbol_name) {
+    static std::string
+    symbol_name_to_token_id(std::string const &symbol_name) {
         return std::string{"TKN_ID_"} + symbol_name;
     }
 };
@@ -58,7 +63,8 @@ static std::ofstream rules_c_stream;
 static std::ofstream rules_h_stream;
 static std::ofstream makefile_stream;
 
-void init_directory_structure(std::string output_directory) {
+void
+init_directory_structure(std::string output_directory) {
     std::filesystem::create_directory(output_directory);
     std::filesystem::create_directory(output_directory + "/src");
     lexer_stream.open(output_directory + "/src/lexer.l");
@@ -72,9 +78,9 @@ void init_directory_structure(std::string output_directory) {
     LOG_INFO << "Created directory structure.\n";
 }
 
-
-void begin_lexer_parser() {
-        lexer_stream << R"(
+void
+begin_lexer_parser() {
+    lexer_stream << R"(
 %{
 #include "y.tab.h"
 #include "Ast.h"
@@ -100,30 +106,32 @@ extern int yylineno;
 }
 
 )";
-    
+
     LOG_INFO << "Beginning lexer + parser.\n";
 }
 
-void generate_lexer(json const& language_description) {
+void
+generate_lexer(json const &language_description) {
     std::vector<json> const tokens = language_description["tokens"];
 
-    for (json const& token : tokens) {
-        std::string const symbol_name = token["name"];
+    for (json const &token : tokens) {
+        std::string const symbol_name   = token["name"];
         std::string const token_matcher = token["matcher"];
-        bool const is_regex = token["is_regex"].get<bool>();
+        bool const        is_regex      = token["is_regex"].get<bool>();
 
         std::string const token_id = TokenList::symbol_name_to_token_id(symbol_name);
         TokenList::the()->add_token(symbol_name);
         parser_stream << "%token <node>" << token_id << '\n';
-        lexer_stream << (is_regex?"": "\"") << token_matcher << (is_regex?"": "\"") << " { printf(\" lexing: " << token_id <<  "\\n\");" 
-         << " yylval.node = ast_node_new_token(\"" << token_id << "\", yytext);"
-         << " return " << token_id << "; }\n";
+        lexer_stream << (is_regex ? "" : "\"") << token_matcher << (is_regex ? "" : "\"")
+                     << " { printf(\" lexing: " << token_id << "\\n\");"
+                     << " yylval.node = ast_node_new_token(\"" << token_id << "\", yytext);"
+                     << " return " << token_id << "; }\n";
 
         LOG_INFO << "writing token: " << token_id << " | matcher: " << token_matcher << '\n';
     }
 
     std::vector<json> const rules = language_description["rules"];
-    for(json const& rule : rules) {
+    for (json const &rule : rules) {
         std::string const rule_name = rule["name"];
 
         parser_stream << "%type <node>" << rule_name << '\n';
@@ -132,32 +140,35 @@ void generate_lexer(json const& language_description) {
     LOG_INFO << "Tokens writen to lexer + parser.\n";
 }
 
-void generate_parser_options(json const& language_description) {
+void
+generate_parser_options(json const &language_description) {
     parser_stream << R"(
 
-%start )" << language_description["start_rule"].get<std::string>() << R"(
+%start )" << language_description["start_rule"].get<std::string>()
+                  << R"(
 
 %%
 
 )";
 }
 
-void generate_parser(json const& language_description) {
+void
+generate_parser(json const &language_description) {
     std::vector<json> const rules = language_description["rules"];
 
-    for (json const& rule : rules) {
-        std::string rule_name = rule["name"];
+    for (json const &rule : rules) {
+        std::string             rule_name     = rule["name"];
         std::vector<json> const constructions = rule["constructions"];
 
         parser_stream << rule_name << " : ";
         LOG_INFO << "writing rules for grammar piece: " << rule_name << '\n';
-        
-        auto write_construction = [&](json const& construction) {
-            std::string const tag = construction["tag"];
-            std::string const tag_id = rule_name_and_tag_to_tagid(rule_name, tag);
+
+        auto write_construction = [&](json const &construction) {
+            std::string const              tag     = construction["tag"];
+            std::string const              tag_id  = rule_name_and_tag_to_tagid(rule_name, tag);
             std::vector<std::string> const symbols = construction["symbols"];
 
-            for(auto const& symbol : symbols) {
+            for (auto const &symbol : symbols) {
                 std::string possible_token_id = TokenList::symbol_name_to_token_id(symbol);
                 if (TokenList::the()->is_valid_token(symbol)) {
                     parser_stream << possible_token_id << ' ';
@@ -166,7 +177,8 @@ void generate_parser(json const& language_description) {
                 }
             }
             parser_stream << "{ printf(\"parsing: " << tag_id << "\\n\"); "
-                << "$$ = ast_node_new(\"" << tag_id << "\", " << "AST_NODE_" << to_upper(rule_name) << ", " << tag_id << ", " << symbols.size() << ", ";
+                          << "$$ = ast_node_new(\"" << tag_id << "\", "
+                          << "AST_NODE_" << to_upper(rule_name) << ", " << tag_id << ", " << symbols.size() << ", ";
             for (size_t idx = 0; idx < symbols.size(); ++idx) {
                 parser_stream << "$" << idx + 1;
                 if (idx != symbols.size() - 1) {
@@ -175,17 +187,17 @@ void generate_parser(json const& language_description) {
             }
 
             parser_stream << ");";
-            
-            if(rule_name == language_description["start_rule"].get<std::string>()) {
+
+            if (rule_name == language_description["start_rule"].get<std::string>()) {
                 parser_stream << "ast_root = $$;";
             }
 
             parser_stream << "}\n";
         };
 
-        write_construction(constructions[0]);        
+        write_construction(constructions[0]);
         for (size_t idx = 1; idx < constructions.size(); ++idx) {
-            json const& construction = constructions[idx];
+            json const &construction = constructions[idx];
             parser_stream << "| ";
             write_construction(construction);
         }
@@ -193,8 +205,8 @@ void generate_parser(json const& language_description) {
     }
 }
 
-
-void finalize_lexer_parser() {
+void
+finalize_lexer_parser() {
     lexer_stream << R"(
 [ \t] ;
 \n {yylineno++;}
@@ -231,7 +243,8 @@ int main(int argc, char** argv){
     LOG_INFO << "Finalizing lexer + parser.\n";
 }
 
-void generate_ast_h(json const& language_description) {
+void
+generate_ast_h(json const &language_description) {
     ast_h_stream << "#ifndef _AST_H_\n";
     ast_h_stream << "#define _AST_H_\n\n";
 
@@ -246,23 +259,23 @@ void generate_ast_h(json const& language_description) {
     // Note(AAL): generate enum for all tags
     ast_h_stream << "typedef enum _Ast_Node_Type {\n    AST_NODE_SIMPLE_TOKEN,\n";
 
-    for (json const& rule : rules) {
-        std::string  rule_name = rule["name"];
-        std::string const rule_id = "AST_NODE_" + to_upper(rule_name);
+    for (json const &rule : rules) {
+        std::string       rule_name = rule["name"];
+        std::string const rule_id   = "AST_NODE_" + to_upper(rule_name);
         ast_h_stream << "    " << rule_id << ",\n";
     }
     ast_h_stream << "} Ast_Node_Type;\n\n";
     // ================================
 
     // Note(AAL): generate one enum for each rule containg its tags
-    for (json const& rule : rules) {
-        std::string  rule_name = rule["name"];
-        std::string const rule_id = "AST_NODE_" + to_upper(rule_name);
+    for (json const &rule : rules) {
+        std::string             rule_name     = rule["name"];
+        std::string const       rule_id       = "AST_NODE_" + to_upper(rule_name);
         std::vector<json> const constructions = rule["constructions"];
 
         ast_h_stream << "typedef enum _" << rule_id << "_Tag {\n";
-        for (json const& construction : constructions) {
-            std::string const tag = construction["tag"];
+        for (json const &construction : constructions) {
+            std::string const tag    = construction["tag"];
             std::string const tag_id = rule_name_and_tag_to_tagid(rule_name, tag);
             ast_h_stream << "    " << tag_id << ",\n";
         }
@@ -299,7 +312,8 @@ const char* ast_node_type_to_string(Ast_Node_Type type);
     ast_h_stream << "#endif //! _AST_H_\n";
 }
 
-void generate_ast_c(json const& language_description) {
+void
+generate_ast_c(json const &language_description) {
     ast_c_stream << R"(
 #include "Ast.h"
 #include "y.tab.h"
@@ -353,9 +367,9 @@ const char* token_id_to_string(uint32_t token_id) {
 )";
 
     std::vector<json> const tokens = language_description["tokens"];
-    for (json const& token : tokens) {
+    for (json const &token : tokens) {
         std::string const token_name = token["name"];
-        std::string const token_id = TokenList::symbol_name_to_token_id(token_name);
+        std::string const token_id   = TokenList::symbol_name_to_token_id(token_name);
         ast_c_stream << "        case " << token_id << ": return \"" << token_id << "\";\n";
     }
     ast_c_stream << R"(
@@ -367,9 +381,9 @@ const char* ast_node_type_to_string(Ast_Node_Type type) {
     switch(type) {
 )";
     std::vector<json> const rules = language_description["rules"];
-    for (json const& rule : rules) {
-        std::string rule_name = rule["name"];
-        std::string const rule_id = "AST_NODE_" + to_upper(rule_name);
+    for (json const &rule : rules) {
+        std::string       rule_name = rule["name"];
+        std::string const rule_id   = "AST_NODE_" + to_upper(rule_name);
         ast_c_stream << "        case " << rule_id << ": return \"" << rule_id << "\";\n";
     }
     ast_c_stream << R"(
@@ -393,7 +407,8 @@ void ast_node_print(Ast_Node* node, uint32_t depth) {
 )";
 }
 
-void generate_rules_h(json const& language_description) {
+void
+generate_rules_h(json const &language_description) {
     std::vector<json> const rules = language_description["rules"];
 
     rules_h_stream << R"(
@@ -408,31 +423,34 @@ typedef void (*rule_apply_fn)(FILE* stream, Ast_Node* node);
 void translate_AST_NODE_SIMPLE_TOKEN(FILE* stream, Ast_Node* node);
 
 void translate_AST_NODE(FILE* stream, Ast_Node* node);
-extern rule_apply_fn rule_apply_fn_AST_NODE[)" << rules.size() + 1 << "];\n\n";
+extern rule_apply_fn rule_apply_fn_AST_NODE[)"
+                   << rules.size() + 1 << "];\n\n";
 
-    for (json const& rule : rules) {
-        std::string rule_name = rule["name"];
-        std::string const rule_id = "AST_NODE_" + to_upper(rule_name);
-        
+    for (json const &rule : rules) {
+        std::string       rule_name = rule["name"];
+        std::string const rule_id   = "AST_NODE_" + to_upper(rule_name);
+
         rules_h_stream << "void translate_" << rule_id << "(FILE* stream, Ast_Node* node);\n";
-        for (json const& construction : rule["constructions"]) {
-            std::string construction_name = construction["tag"];
-            std::string const construction_id = "tagged_" + to_upper(construction_name);
+        for (json const &construction : rule["constructions"]) {
+            std::string       construction_name = construction["tag"];
+            std::string const construction_id   = "tagged_" + to_upper(construction_name);
 
-            rules_h_stream << "void translate_" << rule_id << "_" << construction_id << "(FILE* stream, Ast_Node* node);\n";
+            rules_h_stream << "void translate_" << rule_id << "_" << construction_id
+                           << "(FILE* stream, Ast_Node* node);\n";
         }
 
-        rules_h_stream << "extern rule_apply_fn rule_apply_fn_" << rule_id << "[" << rule["constructions"].size() << "];\n\n";
+        rules_h_stream << "extern rule_apply_fn rule_apply_fn_" << rule_id << "[" << rule["constructions"].size()
+                       << "];\n\n";
     }
     rules_h_stream << R"(
 
 
 #endif //! _RULES_H_
 )";
-
 }
 
-void generate_rules_c(json const& language_description) {
+void
+generate_rules_c(json const &language_description) {
     std::vector<json> const rules = language_description["rules"];
 
     rules_c_stream << R"(
@@ -450,9 +468,9 @@ void translate_AST_NODE(FILE* stream, Ast_Node* node) {
 )";
 
     // generate the function definitions
-    for(auto const& rule : rules ) {
+    for (auto const &rule : rules) {
         std::string const rule_name = rule["name"];
-        std::string const rule_id = "AST_NODE_" + to_upper(rule_name);
+        std::string const rule_id   = "AST_NODE_" + to_upper(rule_name);
 
         // the function for this rule
         rules_c_stream << "void translate_" << rule_id << "(FILE* stream, Ast_Node* node) {\n";
@@ -461,27 +479,27 @@ void translate_AST_NODE(FILE* stream, Ast_Node* node) {
         rules_c_stream << "}\n\n";
 
         // the functions for this rule's tags
-        for (json const& construction : rule["constructions"]) {
-            std::string construction_name = construction["tag"];
-            std::string const construction_id = "tagged_" + to_upper(construction_name);
+        for (json const &construction : rule["constructions"]) {
+            std::string       construction_name = construction["tag"];
+            std::string const construction_id   = "tagged_" + to_upper(construction_name);
 
-            rules_c_stream << "void translate_" << rule_id << "_" << construction_id << "(FILE* stream, Ast_Node* node) {\n";
-            // TODO(AAL): parse out the translation out of the construction and generate the code here
-            
-            
+            rules_c_stream << "void translate_" << rule_id << "_" << construction_id
+                           << "(FILE* stream, Ast_Node* node) {\n";
+            // TODO(AAL): parse out the translation out of the construction and
+            // generate the code here
+
             std::string const action = construction["action"];
             std::stringstream action_istream{action};
             std::stringstream action_ostream{};
 
             std::string slice;
-            char c;
-            while(action_istream.get(c), action_istream.good()) {
-                if(c == '$') {
+            char        c;
+            while (action_istream.get(c), action_istream.good()) {
+                if (c == '$') {
                     slice = action_ostream.str();
                     action_ostream.clear();
                     action_ostream.str(std::string());
-                    if(slice.size() > 0)
-                        rules_c_stream << "    fprintf(stream, \"" << slice << "\");\n";
+                    if (slice.size() > 0) rules_c_stream << "    fprintf(stream, \"" << slice << "\");\n";
                     int idx;
                     action_istream >> idx;
                     rules_c_stream << "translate_AST_NODE(stream, node->children[" << idx << "]);\n";
@@ -490,51 +508,54 @@ void translate_AST_NODE(FILE* stream, Ast_Node* node) {
                 }
             }
             slice = action_ostream.str();
-            if(slice.size() > 0)
-                rules_c_stream << "    fprintf(stream, \"" << slice << "\");\n";
-            
+            if (slice.size() > 0) rules_c_stream << "    fprintf(stream, \"" << slice << "\");\n";
+
             rules_c_stream << "}\n\n";
         }
 
         // the table for this rule's tags
         rules_c_stream << "rule_apply_fn rule_apply_fn_" << rule_id << "[" << rule["constructions"].size() << "] = {\n";
-        for (json const& construction : rule["constructions"]) {
-            std::string construction_name = construction["tag"];
-            std::string const construction_id = "tagged_" + to_upper(construction_name);
+        for (json const &construction : rule["constructions"]) {
+            std::string       construction_name = construction["tag"];
+            std::string const construction_id   = "tagged_" + to_upper(construction_name);
 
             rules_c_stream << "    translate_" << rule_id << "_" << construction_id << ",\n";
         }
         rules_c_stream << "};\n\n";
     }
     // the rule_apply_fn_AST_NODE table
-    rules_c_stream << "rule_apply_fn rule_apply_fn_AST_NODE[" << rules.size() + 1 << "] = {\n    translate_AST_NODE_SIMPLE_TOKEN,\n";
-    for(auto const& rule : rules) {
+    rules_c_stream << "rule_apply_fn rule_apply_fn_AST_NODE[" << rules.size() + 1
+                   << "] = {\n    translate_AST_NODE_SIMPLE_TOKEN,\n";
+    for (auto const &rule : rules) {
         std::string const rule_name = rule["name"];
-        std::string const rule_id = "AST_NODE_" + to_upper(rule_name);
+        std::string const rule_id   = "AST_NODE_" + to_upper(rule_name);
 
         rules_c_stream << "    translate_" << rule_id << ",\n";
     }
     rules_c_stream << "};\n\n";
 }
 
-
-void generate_makefile(json const& language_description) {
+void
+generate_makefile(json const &language_description) {
     json const meta = language_description["meta"];
 
-    std::string const language_name = meta["name"];
+    std::string const language_name    = meta["name"];
     std::string const language_version = meta["version"];
-    std::string const bin_name = meta["bin"];
+    std::string const bin_name         = meta["bin"];
 
-    makefile_stream << 
-R"(
+    makefile_stream <<
+        R"(
 add_rules("mode.debug", "mode.release")
 
 set_warnings("all")
 add_languages("c17")
-set_version(")" << language_version << R"(")
+set_version(")" << language_version
+                    << R"(")
 
-target(")" << language_name << R"(")
-    set_filename(")" << bin_name << R"(")
+target(")" << language_name
+                    << R"(")
+    set_filename(")" << bin_name
+                    << R"(")
     set_kind("binary")
 
     before_build(function (target)
@@ -547,22 +568,23 @@ target(")" << language_name << R"(")
 
     add_files("src/Ast.c", "src/Rules.c", "src/lex.yy.c", "src/y.tab.c")
 )";
-
 }
 
-int main(int argc, char** argv) {
+int
+main(int argc, char **argv) {
 
-    if(argc != 3) {
+    if (argc != 3) {
         std::cerr << "Usage: " << argv[0] << " <language_description.json> <output-folder>\n";
         return 1;
     }
     std::string const language_description_path = argv[1];
-    std::string const output_folder = argv[2];
+    std::string const output_folder             = argv[2];
 
-    LOG_INFO << "Generating code for language description: " << language_description_path << " in folder: " << output_folder << "\n";
+    LOG_INFO << "Generating code for language description: " << language_description_path
+             << " in folder: " << output_folder << "\n";
 
-    json language_description{}; 
-    
+    json language_description{};
+
     std::ifstream ifs{language_description_path};
     // std::string text;
     // ifs >> text;
