@@ -1,5 +1,9 @@
+// this project:
+#include "mc/options.hpp"
+// thirdparty:
 #include "nlohmann/json.hpp"
-
+using json = nlohmann::json;
+// std:
 #include <cctype>
 #include <cstdio>
 #include <filesystem>
@@ -10,7 +14,6 @@
 #include <set>
 #include <string>
 #include <vector>
-using json = nlohmann::json;
 
 #define LOG_INFO std::clog << "[INFO] [" << __FILE__ << ':' << __LINE__ << "] "
 
@@ -572,27 +575,18 @@ target(")" << language_name
 
 int
 main(int argc, char **argv) {
+    mc::CmdOptions options = mc::parse_cmd_options(argc, argv);
 
-    if (argc != 3) {
-        std::cerr << "Usage: " << argv[0] << " <language_description.json> <output-folder>\n";
-        return 1;
-    }
-    std::string const language_description_path = argv[1];
-    std::string const output_folder             = argv[2];
-
-    LOG_INFO << "Generating code for language description: " << language_description_path
-             << " in folder: " << output_folder << "\n";
+    LOG_INFO << "Generating code for language description: " << options.input_file
+             << " in folder: " << options.output_dir << "\n";
 
     json language_description{};
 
-    std::ifstream ifs{language_description_path};
-    // std::string text;
-    // ifs >> text;
-    // LOG_INFO << "text " << text << "\n";
+    std::ifstream ifs{options.input_file};
     ifs >> language_description;
     ifs.close();
 
-    init_directory_structure(output_folder);
+    init_directory_structure(options.output_dir);
     begin_lexer_parser();
     generate_lexer(language_description);
     generate_parser_options(language_description);
