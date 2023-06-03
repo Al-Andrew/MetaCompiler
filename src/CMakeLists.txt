@@ -1,5 +1,7 @@
 set(SOURCES
     main.cpp
+    options.cpp
+    logging.cpp
 )
 
 add_executable(mc ${SOURCES})
