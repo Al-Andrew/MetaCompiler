@@ -1,4 +1,5 @@
 // this project:
+#include "mc/logging.hpp"
 #include "mc/options.hpp"
 // thirdparty:
 #include "nlohmann/json.hpp"
@@ -576,9 +577,11 @@ target(")" << language_name
 int
 main(int argc, char **argv) {
     mc::CmdOptions options = mc::parse_cmd_options(argc, argv);
+    mc::logging::init_logging(options.log_level);
 
-    LOG_INFO << "Generating code for language description: " << options.input_file
-             << " in folder: " << options.output_dir << "\n";
+    MC_TRACE(
+        "Generating code for language description: {} in folder: {}", options.input_file.generic_string(),
+        options.output_dir.generic_string());
 
     json language_description{};
 
