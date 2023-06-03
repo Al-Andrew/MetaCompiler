@@ -28,21 +28,25 @@ class Config():
     tests_path = None
     tests_to_run = None
     tests_number_to_path_map = None
+    generate_expected = None
 
     @staticmethod
     def init() -> None:
         ap = argparse.ArgumentParser(description='Test runner for MetaCompiler')
         ap.add_argument('path_to_mc_exe', type=str, help='Path to MetaCompiler executable')
         ap.add_argument('--tests-dir', type=str, default='.', help='Path to tests directory (default: .)')
+        ap.add_argument('--generate-expected', action='store_true', help='Generate expected outputs for tests if it doesn\'t exist', default=False)
         gr = ap.add_mutually_exclusive_group()
         gr.add_argument('--all', action='store_true', help='Run all tests')
         gr.add_argument('--tests', type=str, nargs='+', help='Run specified tests by number')
+        
         
         args = ap.parse_args()
         Config.path_to_mc_exe = args.path_to_mc_exe
         Config.tests_path = args.tests_dir
         tests_available, tests_number_to_path_map = util.get_availalbe_tests(args.tests_dir)
         Config.tests_number_to_path_map = tests_number_to_path_map
+        Config.generate_expected = args.generate_expected
         if args.all:
             Config.tests_to_run = tests_available
         elif args.tests:
@@ -140,7 +144,15 @@ def run_assertion(test_output_path: str, compiler_exe_path: str, assertion_input
     end_time = time.time()
     assertion_time = end_time - start_time
 
-    assertion_success = util.compare_files(assertion_output_path, assertion_expected_output_path)
+    if(Config.generate_expected):
+        logging.info('        Generating expected output for assertion #%d...', assertion_number)
+        util.copy_dir_contains(assertion_output_path, assertion_expected_output_path)
+        assertion_success = True
+        logging.info('        Generating expected output for assertion #%d done!', assertion_number)
+    else:
+        assertion_success = util.compare_files(assertion_output_path, assertion_expected_output_path)
+    
+    
     if assertion_success:
         logging.info('        Assertion #%d success!', assertion_number)
     else:

@@ -55,3 +55,24 @@ def compare_files(actual_outputs_path: str, expected_outputs_path: str) -> bool:
             return False
     
     return True
+
+
+def copy_dir_contains(src_dir: str, dst_dir: str) -> None:
+    """
+    Copies all files and directories from 'src_dir' to 'dst_dir'.
+    """
+    try:
+        os.mkdir(dst_dir)
+    except FileExistsError:
+        pass
+    for src_file in os.listdir(src_dir):
+        src_file_path = os.path.join(src_dir, src_file)
+        dst_file_path = os.path.join(dst_dir, src_file)
+        if os.path.isdir(src_file_path):
+            try:
+                os.mkdir(dst_file_path)
+            except FileExistsError:
+                pass
+            copy_dir_contains(src_file_path, dst_file_path)
+        else:
+            os.system(f'cp {src_file_path} {dst_file_path}')

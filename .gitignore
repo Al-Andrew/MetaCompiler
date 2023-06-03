@@ -7,3 +7,4 @@ demo/
 testing/tests/.outputs
 testing/__pycache__
 bin/
+.venv/
