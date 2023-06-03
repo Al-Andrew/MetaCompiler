@@ -9,4 +9,6 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(JSON_BuildTests OFF CACHE INTERNAL "")
 add_subdirectory(thirdparty/nlohmann)
 
+add_subdirectory(thirdparty/spdlog)
+
 add_subdirectory(src)
