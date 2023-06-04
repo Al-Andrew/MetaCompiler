@@ -1,4 +1,5 @@
 // this project:
+#include "mc/generate.hpp"
 #include "mc/language_description.hpp"
 #include "mc/logging.hpp"
 #include "mc/options.hpp"
@@ -589,22 +590,24 @@ main(int argc, char **argv) {
     auto ld = mc::Language_Description::new_from_json(options.input_file);
     ld.validate_rules();
 
+    mc::generate(ld, options.output_dir);
+
     return 0;
-    json language_description{};
+    // json language_description{};
 
-    std::ifstream ifs{options.input_file};
-    ifs >> language_description;
-    ifs.close();
+    // std::ifstream ifs{options.input_file};
+    // ifs >> language_description;
+    // ifs.close();
 
-    init_directory_structure(options.output_dir);
-    begin_lexer_parser();
-    generate_lexer(language_description);
-    generate_parser_options(language_description);
-    generate_parser(language_description);
-    finalize_lexer_parser();
-    generate_ast_h(language_description);
-    generate_ast_c(language_description);
-    generate_rules_h(language_description);
-    generate_rules_c(language_description);
-    generate_makefile(language_description);
+    // init_directory_structure(options.output_dir);
+    // begin_lexer_parser();
+    // generate_lexer(language_description);
+    // generate_parser_options(language_description);
+    // generate_parser(language_description);
+    // finalize_lexer_parser();
+    // generate_ast_h(language_description);
+    // generate_ast_c(language_description);
+    // generate_rules_h(language_description);
+    // generate_rules_c(language_description);
+    // generate_makefile(language_description);
 }

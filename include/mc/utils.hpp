@@ -11,6 +11,11 @@
         exit(EXIT_FAILURE);             \
     }
 
+#define MC_CHECK_WARN(expr, msg, ...) \
+    if (!(expr)) {                    \
+        MC_WARN(msg, ##__VA_ARGS__);  \
+    }
+
 #define MC_CHECK_EXIT(expr, msg, ...)    \
     if (!(expr)) {                       \
         MC_CRITICAL(msg, ##__VA_ARGS__); \
