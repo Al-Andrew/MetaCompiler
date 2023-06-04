@@ -3,6 +3,8 @@ set(SOURCES
     options.cpp
     logging.cpp
     language_description.cpp
+    stencil.cpp
+    generate.cpp
 )
 
 add_executable(mc ${SOURCES})
