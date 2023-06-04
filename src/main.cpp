@@ -1,6 +1,7 @@
 // this project:
 #include "mc/logging.hpp"
 #include "mc/options.hpp"
+#include "mc/utils.hpp"
 // thirdparty:
 #include "nlohmann/json.hpp"
 using json = nlohmann::json;
@@ -576,7 +577,9 @@ target(")" << language_name
 
 int
 main(int argc, char **argv) {
-    mc::CmdOptions options = mc::parse_cmd_options(argc, argv);
+    MC_TRACE_FUNCTION("");
+
+    mc::Cmd_Options options = mc::parse_cmd_options(argc, argv);
     mc::logging::init_logging(options.log_level);
 
     MC_TRACE(
