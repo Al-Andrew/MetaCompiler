@@ -17,7 +17,7 @@ void
 init_logging(const spdlog::level::level_enum level);
 
 namespace detail {
-struct LoggersContainer {
+struct Loggers_Container {
     static std::shared_ptr<spdlog::logger> stdout;
 };
 
@@ -26,9 +26,9 @@ struct LoggersContainer {
 }  // namespace logging
 }  // namespace mc
 
-#define MC_TRACE(...)    SPDLOG_LOGGER_TRACE(mc::logging::detail::LoggersContainer::stdout, __VA_ARGS__)
-#define MC_DEBUG(...)    SPDLOG_LOGGER_DEBUG(mc::logging::detail::LoggersContainer::stdout, __VA_ARGS__)
-#define MC_INFO(...)     SPDLOG_LOGGER_INFO(mc::logging::detail::LoggersContainer::stdout, __VA_ARGS__)
-#define MC_WARN(...)     SPDLOG_LOGGER_WARN(mc::logging::detail::LoggersContainer::stdout, __VA_ARGS__)
-#define MC_ERROR(...)    SPDLOG_LOGGER_ERROR(mc::logging::detail::LoggersContainer::stdout, __VA_ARGS__)
-#define MC_CRITICAL(...) SPDLOG_LOGGER_CRITICAL(mc::logging::detail::LoggersContainer::stdout, __VA_ARGS__)
+#define MC_TRACE(...)    SPDLOG_LOGGER_TRACE(mc::logging::detail::Loggers_Container::stdout, __VA_ARGS__)
+#define MC_DEBUG(...)    SPDLOG_LOGGER_DEBUG(mc::logging::detail::Loggers_Container::stdout, __VA_ARGS__)
+#define MC_INFO(...)     SPDLOG_LOGGER_INFO(mc::logging::detail::Loggers_Container::stdout, __VA_ARGS__)
+#define MC_WARN(...)     SPDLOG_LOGGER_WARN(mc::logging::detail::Loggers_Container::stdout, __VA_ARGS__)
+#define MC_ERROR(...)    SPDLOG_LOGGER_ERROR(mc::logging::detail::Loggers_Container::stdout, __VA_ARGS__)
+#define MC_CRITICAL(...) SPDLOG_LOGGER_CRITICAL(mc::logging::detail::Loggers_Container::stdout, __VA_ARGS__)

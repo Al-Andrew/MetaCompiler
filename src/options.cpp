@@ -20,7 +20,7 @@
 
 namespace mc {
 
-CmdOptions
+Cmd_Options
 parse_cmd_options(int argc, char **argv) {
 
     cxxopts::Options cmd("mc", "Framework for generating compilers.");
@@ -39,7 +39,7 @@ parse_cmd_options(int argc, char **argv) {
         exit(0);
     }
 
-    CmdOptions ret;
+    Cmd_Options ret;
     if (options.count("log")) {
         TRY_OR_HELP(
             ret.log_level = mc::logging::string_to_log_level(options["l"].as<std::string>()).value(),

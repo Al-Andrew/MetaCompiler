@@ -6,13 +6,13 @@
 
 namespace mc {
 
-struct CmdOptions {
+struct Cmd_Options {
     std::filesystem::path     input_file;
     std::filesystem::path     output_dir;
     spdlog::level::level_enum log_level;
 };
 
-CmdOptions
+Cmd_Options
 parse_cmd_options(int argc, char **argv);
 
 }  // namespace mc
