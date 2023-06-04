@@ -1,4 +1,5 @@
 // this project:
+#include "mc/language_description.hpp"
 #include "mc/logging.hpp"
 #include "mc/options.hpp"
 #include "mc/utils.hpp"
@@ -577,15 +578,18 @@ target(")" << language_name
 
 int
 main(int argc, char **argv) {
-    MC_TRACE_FUNCTION("");
 
     mc::Cmd_Options options = mc::parse_cmd_options(argc, argv);
     mc::logging::init_logging(options.log_level);
 
-    MC_TRACE(
-        "Generating code for language description: {} in folder: {}", options.input_file.generic_string(),
-        options.output_dir.generic_string());
+    MC_TRACE_FUNCTION(
+        "options: input_file: {}, output_dir: {}, log_level: {}", options.input_file.string(),
+        options.output_dir.string(), mc::logging::log_level_to_string(options.log_level)->data());
 
+    auto ld = mc::Language_Description::new_from_json(options.input_file);
+    ld.validate_rules();
+
+    return 0;
     json language_description{};
 
     std::ifstream ifs{options.input_file};

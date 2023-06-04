@@ -1,14 +1,22 @@
 {
-    "meta" : {
-        "name" : "neodymium",
-        "bin" : "nc",
-        "version" : "0.0.1"
+    "meta": {
+        "name": "neodymium",
+        "bin": "nc",
+        "version": "0.0.1"
     },
     "tokens": [
-        { "name": "LPAREN", "matcher": "(", "is_regex": false},
-        { "name": "RPAREN", "matcher": ")", "is_regex": false}
+        {
+            "name": "LPAREN",
+            "matcher": "(",
+            "is_regex": false
+        },
+        {
+            "name": "RPAREN",
+            "matcher": ")",
+            "is_regex": false
+        }
     ],
-    "rules" : [
+    "rules": [
         {
             "name": "list",
             "constructions": [

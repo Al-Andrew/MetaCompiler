@@ -10,8 +10,11 @@
 namespace mc {
 namespace logging {
 
-std::optional<spdlog::level::level_enum>
+[[nodiscard]] std::optional<spdlog::level::level_enum>
 string_to_log_level(const std::string_view level);
+
+[[nodiscard]] std::optional<std::string_view>
+log_level_to_string(const spdlog::level::level_enum level);
 
 void
 init_logging(const spdlog::level::level_enum level);
