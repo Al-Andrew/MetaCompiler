@@ -11,6 +11,21 @@ using json = nlohmann::json;
 
 namespace mc {
 
+[[nodiscard]] std::string
+Token::enum_name() const noexcept {
+    std::string result = "TKN_";
+
+    for (auto c : name) {
+        if (std::isalnum(c)) {
+            result += std::toupper(c);
+        } else {
+            result += '_';
+        }
+    }
+
+    return result;
+}
+
 Language_Description
 Language_Description::new_from_json(std::filesystem::path path) noexcept {
     MC_TRACE_FUNCTION("");

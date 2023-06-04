@@ -6,6 +6,7 @@
 
 #include <cstdlib>
 #include <filesystem>
+#include <fstream>
 
 namespace mc {
 
@@ -74,6 +75,89 @@ generate_lex_lexer(Language_Description ld, std::ofstream file) noexcept;
 void
 generate_yacc_parser(Language_Description ld, std::ofstream file) noexcept;
 
+static constexpr std::string_view tokens_header_stencil = R"__hpp(
+#pragma once
+#include <string_view>
+
+enum class Token_Type : unsigned int {
+/* @tokens */
+};
+
+struct Token {
+    Token_Type type;
+    std::string_view value;
+    unsigned int line;
+    unsigned int column;
+};
+
+)__hpp";
+
+static constexpr std::string_view tokens_file_stencil = R"__cpp(
+
+)__cpp";
+
+void
+generate_tokens(Language_Description ld, std::ofstream &header, std::ofstream &file) noexcept {
+    MC_TRACE_FUNCTION("");
+    using mc::Stencil;
+
+    Stencil header_stencil(tokens_header_stencil, header);
+    Stencil file_stencil(tokens_file_stencil, file);
+
+    auto current_ident = header_stencil.push_untill_identifier();
+
+    MC_CHECK_EXIT(current_ident.has_value(), "expected \"@tokens\" identifier in tokens.hpp stencil");
+    for (auto token : ld.tokens) {
+        header_stencil.file << "    " << token.enum_name() << ",\n";
+    }
+    current_ident = header_stencil.push_untill_identifier();
+    MC_CHECK_EXIT(!current_ident.has_value(), "expected no more identifiers in tokens.hpp stencil");
+
+    current_ident = file_stencil.push_untill_identifier();
+    MC_CHECK_EXIT(!current_ident.has_value(), "expected no more identifiers in tokens.cpp stencil");
+}
+
+static constexpr std::string_view symbols_header_stencil = R"__hpp(
+#pragma once
+#include "tokens.hpp"
+
+enum class Symbol_Type : unsigned int {
+    SYMBOL_TOKEN,
+    SYMBOL_RULE,
+};
+
+struct Symbol {
+    Symbol_Type type;
+    union {
+        Token m_token;
+        // Rule m_rule;
+    };
+
+    [[nodiscard]] inline bool is_token() const noexcept { return this.type == SYMBOL_TOKEN; };
+    [[nodiscard]] inline Token& token() noexcept { return this.m_token; }
+    [[nodiscard]] inline const Token& token() const noexcept { return this.m_token; }
+    [[nodiscard]] inline bool is_rule() const noexcept { return this.type == SYMBOL_RULE; };
+    // [[nodiscard]] inline Rule& rule() noexcept { return this.rule; }
+    // [[nodiscard]] inline const Rule& rule() const noexcept { return this.rule; }
+};
+
+)__hpp";
+static constexpr std::string_view symbols_file_stencil   = R"__cpp()__cpp";
+
+void
+generate_symbols(std::ofstream &headern, std::ofstream &file) noexcept {
+    MC_TRACE_FUNCTION("");
+    using mc::Stencil;
+
+    Stencil header_stencil(symbols_header_stencil, headern);
+    Stencil file_stencil(symbols_file_stencil, file);
+
+    auto current_ident = header_stencil.push_untill_identifier();
+    MC_CHECK_EXIT(!current_ident.has_value(), "expected no more identifiers in symbols.hpp stencil");
+    current_ident = file_stencil.push_untill_identifier();
+    MC_CHECK_EXIT(!current_ident.has_value(), "expected no more identifiers in symbols.cpp stencil");
+}
+
 void
 generate_ast(Language_Description ld, std::ofstream header, std::ofstream file) noexcept;
 
@@ -113,6 +197,16 @@ generate(Language_Description ld, std::filesystem::path output_dir) noexcept {
         std::ofstream proj_makefile(output_dir / "CMakeLists.txt");
         std::ofstream src_makefile(output_dir / "src" / "CMakeLists.txt");
         generate_makefile(ld, proj_makefile, src_makefile);
+    }
+    {
+        std::ofstream tokens_header(output_dir / "src" / "tokens.hpp");
+        std::ofstream tokens_file(output_dir / "src" / "tokens.cpp");
+        generate_tokens(ld, tokens_header, tokens_file);
+    }
+    {
+        std::ofstream tokens_header(output_dir / "src" / "symbols.hpp");
+        std::ofstream tokens_file(output_dir / "src" / "symbols.cpp");
+        generate_symbols(tokens_header, tokens_file);
     }
 
     generate_executable(output_dir);
