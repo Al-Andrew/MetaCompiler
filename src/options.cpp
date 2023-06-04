@@ -40,11 +40,8 @@ parse_cmd_options(int argc, char **argv) {
     }
 
     Cmd_Options ret;
-    if (options.count("log")) {
-        TRY_OR_HELP(
-            ret.log_level = mc::logging::string_to_log_level(options["l"].as<std::string>()).value(),
-            "Invalid log level");
-    }
+    TRY_OR_HELP(
+        ret.log_level = mc::logging::string_to_log_level(options["l"].as<std::string>()).value(), "Invalid log level");
     TRY_OR_HELP(ret.input_file = options["i"].as<std::string>(), "Input file path is required");
     TRY_OR_HELP(ret.output_dir = options["o"].as<std::string>(), "Output dir path is required");
 

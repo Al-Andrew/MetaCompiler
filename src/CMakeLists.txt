@@ -2,6 +2,7 @@ set(SOURCES
     main.cpp
     options.cpp
     logging.cpp
+    language_description.cpp
 )
 
 add_executable(mc ${SOURCES})

@@ -26,6 +26,15 @@ string_to_log_level(const std::string_view level) {
     return std::nullopt;
 }
 
+std::optional<std::string_view>
+log_level_to_string(const spdlog::level::level_enum level) {
+    if (static_cast<unsigned int>(level) < log_level_names.size()) {
+        return log_level_names[static_cast<unsigned int>(level)];
+    }
+
+    return std::nullopt;
+}
+
 auto detail::Loggers_Container::stdout = spdlog::stdout_color_mt("console");
 void
 init_logging(const spdlog::level::level_enum level) {
