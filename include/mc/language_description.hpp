@@ -13,6 +13,9 @@ struct Token {
     Token(std::string name, std::string match, bool is_regex)
         : name(std::move(name)), match(std::move(match)), is_regex(is_regex) {
     }
+
+    [[nodiscard]] std::string
+    enum_name() const noexcept;
 };
 
 struct Construction {
