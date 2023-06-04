@@ -76,11 +76,11 @@ init_directory_structure(std::string output_directory) {
     std::filesystem::create_directory(output_directory + "/src");
     lexer_stream.open(output_directory + "/src/lexer.l");
     parser_stream.open(output_directory + "/src/parser.y");
-    ast_c_stream.open(output_directory + "/src/Ast.c");
-    ast_h_stream.open(output_directory + "/src/Ast.h");
-    rules_c_stream.open(output_directory + "/src/Rules.c");
-    rules_h_stream.open(output_directory + "/src/Rules.h");
-    makefile_stream.open(output_directory + "/xmake.lua");
+    ast_c_stream.open(output_directory + "/src/Ast.cpp");
+    ast_h_stream.open(output_directory + "/src/Ast.hpp");
+    rules_c_stream.open(output_directory + "/src/Rules.cpp");
+    rules_h_stream.open(output_directory + "/src/Rules.hpp");
+    // makefile_stream.open(output_directory + "/xmake.lua");
 
     LOG_INFO << "Created directory structure.\n";
 }
@@ -89,8 +89,8 @@ void
 begin_lexer_parser() {
     lexer_stream << R"(
 %{
-#include "y.tab.h"
-#include "Ast.h"
+#include "parser.hpp"
+#include "Ast.hpp"
 %}
 %option noyywrap
 %%
@@ -100,12 +100,11 @@ begin_lexer_parser() {
     parser_stream << R"(
 %{
 #include <stdio.h>
-#include "Ast.h"
-#include "Rules.h"
+#include "Ast.hpp"
+#include "Rules.hpp"
+#include "lexer.hpp"
 
-extern FILE* yyin;
-extern char* yytext;
-extern int yylineno;
+extern int yyerror(char * s);
 %}
 
 %union {
@@ -322,8 +321,8 @@ const char* ast_node_type_to_string(Ast_Node_Type type);
 void
 generate_ast_c(json const &language_description) {
     ast_c_stream << R"(
-#include "Ast.h"
-#include "y.tab.h"
+#include "Ast.hpp"
+#include "parser.hpp"
 
 #include "string.h"
 #include "stdio.h"  
@@ -333,7 +332,7 @@ Ast_Node* ast_root = NULL;
 Ast_Node* ast_node_new(const char* name, uint32_t type, uint32_t tag, uint32_t num_children, ...) {
     Ast_Node* node = (Ast_Node*)malloc(sizeof(Ast_Node));
     node->name = name;
-    node->type = type;
+    node->type = (Ast_Node_Type)type;
     node->tag = tag;
     node->value = NULL;
     node->parent = NULL;
@@ -422,7 +421,7 @@ generate_rules_h(json const &language_description) {
 #ifndef _RULES_H_
 #define _RULES_H_
 
-#include "Ast.h"
+#include "Ast.hpp"
 #include "stdio.h"
 
 typedef void (*rule_apply_fn)(FILE* stream, Ast_Node* node);
@@ -461,7 +460,7 @@ generate_rules_c(json const &language_description) {
     std::vector<json> const rules = language_description["rules"];
 
     rules_c_stream << R"(
-#include "Rules.h"
+#include "Rules.hpp"
 
 void translate_AST_NODE_SIMPLE_TOKEN(FILE* stream, Ast_Node* node) {
     fprintf(stream, "%s", node->value);
@@ -542,41 +541,6 @@ void translate_AST_NODE(FILE* stream, Ast_Node* node) {
     rules_c_stream << "};\n\n";
 }
 
-void
-generate_makefile(json const &language_description) {
-    json const meta = language_description["meta"];
-
-    std::string const language_name    = meta["name"];
-    std::string const language_version = meta["version"];
-    std::string const bin_name         = meta["bin"];
-
-    makefile_stream <<
-        R"(
-add_rules("mode.debug", "mode.release")
-
-set_warnings("all")
-add_languages("c17")
-set_version(")" << language_version
-                    << R"(")
-
-target(")" << language_name
-                    << R"(")
-    set_filename(")" << bin_name
-                    << R"(")
-    set_kind("binary")
-
-    before_build(function (target)
-        os.run("yacc -d src/parser.y")
-        os.run("mv y.tab.h y.tab.c src/")
-        os.run("lex src/lexer.l")
-        os.run("mv lex.yy.c src/")
-        os.run("sleep 1")
-    end)
-
-    add_files("src/Ast.c", "src/Rules.c", "src/lex.yy.c", "src/y.tab.c")
-)";
-}
-
 int
 main(int argc, char **argv) {
 
@@ -590,24 +554,32 @@ main(int argc, char **argv) {
     auto ld = mc::Language_Description::new_from_json(options.input_file);
     ld.validate_rules();
 
-    mc::generate(ld, options.output_dir);
+    json language_description{};
 
-    return 0;
-    // json language_description{};
+    std::ifstream ifs{options.input_file};
+    ifs >> language_description;
+    ifs.close();
 
-    // std::ifstream ifs{options.input_file};
-    // ifs >> language_description;
-    // ifs.close();
-
-    // init_directory_structure(options.output_dir);
-    // begin_lexer_parser();
-    // generate_lexer(language_description);
-    // generate_parser_options(language_description);
-    // generate_parser(language_description);
-    // finalize_lexer_parser();
-    // generate_ast_h(language_description);
-    // generate_ast_c(language_description);
-    // generate_rules_h(language_description);
-    // generate_rules_c(language_description);
+    init_directory_structure(options.output_dir);
+    begin_lexer_parser();
+    generate_lexer(language_description);
+    generate_parser_options(language_description);
+    generate_parser(language_description);
+    finalize_lexer_parser();
+    generate_ast_h(language_description);
+    generate_ast_c(language_description);
+    generate_rules_h(language_description);
+    generate_rules_c(language_description);
     // generate_makefile(language_description);
+
+    // close all streams
+    lexer_stream.close();
+    parser_stream.close();
+    ast_c_stream.close();
+    ast_h_stream.close();
+    rules_c_stream.close();
+    rules_h_stream.close();
+    // makefile_stream.close();
+
+    mc::generate(ld, options.output_dir);
 }

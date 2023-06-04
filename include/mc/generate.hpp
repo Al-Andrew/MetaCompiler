@@ -18,7 +18,7 @@ void
 generate_ast(Language_Description ld, std::ofstream header, std::ofstream file) noexcept;
 
 void
-generate_executable(Language_Description ld) noexcept;
+generate_executable(std::filesystem::path output_dir) noexcept;
 
 void
 generate(Language_Description ld, std::filesystem::path output_dir) noexcept;
