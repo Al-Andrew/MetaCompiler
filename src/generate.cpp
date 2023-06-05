@@ -7,6 +7,7 @@
 #include <cstdlib>
 #include <filesystem>
 #include <fstream>
+#include <variant>
 
 namespace mc {
 
@@ -41,8 +42,7 @@ FLEX_TARGET(Lexer ${LEXER_INPUT} ${LEXER_OUTPUT} COMPILE_FLAGS "--header=lexer.h
 include_directories(${CMAKE_CURRENT_BINARY_DIR} ${CMAKE_CURRENT_SOURCE_DIR})
 
 set(SOURCES
-    Ast.cpp
-    Rules.cpp
+    ast.cpp
 )
 
 add_executable(/* @bin */ ${SOURCES} ${BISON_Parser_OUTPUTS} ${FLEX_Lexer_OUTPUTS})
@@ -69,11 +69,126 @@ generate_makefile(Language_Description ld, std::ofstream &proj, std::ofstream &s
     current_ident = src_stencil.push_untill_identifier();
 }
 
-void
-generate_lex_lexer(Language_Description ld, std::ofstream file) noexcept;
+static constexpr std::string_view lex_stencil = R"__lex(
+%{
+#include "parser.hpp"
+#include "ast.hpp"
+%}
+
+%option noyywrap
+
+%%
+
+/* @tokens */
+
+[ \t] ;
+\n {yylineno++;}
+"//".*$ {;}
+. {return yytext[0];}
+
+%%
+)__lex";
+
+static constexpr std::string_view yacc_stencil = R"__yacc(
+%{
+#include <stdio.h>
+#include "ast.hpp"
+#include "lexer.hpp"
+
+extern int yyerror(char * s);
+%}
+
+%union {
+    struct _Ast_Node* node;
+} 
+
+/* @tokens_types */
+/* @rules_types */
+
+%start /* @start_symbol */
+%%
+
+/* @rules */
+
+%%
+int yyerror(char * s) {
+    printf("[Line: %d] Error: %s\n", yylineno, s);
+}
+
+int main(int argc, char** argv){
+    
+    if(argc < 3) {
+        printf("Usage: %s <input_file> <output_file>\n", argv[0]);
+        return 1;
+    }
+    
+    yyin=fopen(argv[1],"r");
+    yyparse();
+    printf("Parsing complete.\n\n");
+    // ast_node_print(ast_root, 0);
+
+    FILE* stream = fopen(argv[2], "w");
+    // translate_AST_NODE(stream, ast_root);
+    return 0;
+}
+
+)__yacc";
 
 void
-generate_yacc_parser(Language_Description ld, std::ofstream file) noexcept;
+generate_lex_lexer_yacc_parser(Language_Description ld, std::ofstream &lexer, std::ofstream &parser) noexcept {
+    MC_TRACE_FUNCTION("");
+
+    using mc::Stencil;
+    Stencil lexer_stencil(lex_stencil, lexer);
+    Stencil parser_stencil(yacc_stencil, parser);
+
+    auto current_ident = lexer_stencil.push_untill_identifier();
+    MC_CHECK_EXIT(current_ident.has_value(), "expected \"@tokens\" identifier in lexer.l stencil");
+
+    for (auto token : ld.tokens) {
+        lexer_stencil.file << token.matcher_text() << " { return " << token.enum_name() << "; }\n";
+    }
+    current_ident = lexer_stencil.push_untill_identifier();
+    MC_CHECK_EXIT(!current_ident.has_value(), "expected no more identifiers in lexer.l stencil");
+
+    // ---------------------------------------------------------------------------------------------
+
+    current_ident = parser_stencil.push_untill_identifier();
+    MC_CHECK_EXIT(current_ident.has_value(), "expected \"@tokens_types\" identifier in parser.y stencil");
+    for (const auto &token : ld.tokens) {
+        parser_stencil.file << "%token <node>" << token.enum_name() << "\n";
+    }
+
+    current_ident = parser_stencil.push_untill_identifier();
+    MC_CHECK_EXIT(current_ident.has_value(), "expected \"@rules_types\" identifier in parser.y stencil");
+    for (const auto &rule : ld.rules) {
+        parser_stencil.file << "%type <node>" << rule.name << "\n";
+    }
+
+    current_ident = parser_stencil.push_untill_identifier();
+    MC_CHECK_EXIT(current_ident.has_value(), "expected \"@start_symbol\" identifier in parser.y stencil");
+    parser_stencil.file << ld.start_rule;
+
+    current_ident = parser_stencil.push_untill_identifier();
+    MC_CHECK_EXIT(current_ident.has_value(), "expected \"@rules\" identifier in parser.y stencil");
+    for (const auto &rule : ld.rules) {
+        parser_stencil.file << rule.name << " : ";
+        for (const auto &construction : rule.constructions) {
+            for (const auto &symbol : construction.symbols_variant) {
+                if (const Token *t = std::get_if<Token>(&symbol)) {
+                    parser_stencil.file << t->enum_name() << " ";
+                } else if (const Rule *r = std::get_if<Rule>(&symbol)) {
+                    parser_stencil.file << r->name << " ";
+                }
+            }
+            // TODO: add actions
+            parser_stencil.file << "{;}\n";
+        }
+    }
+
+    current_ident = parser_stencil.push_untill_identifier();
+    MC_CHECK_EXIT(!current_ident.has_value(), "expected no more identifiers in parser.y stencil");
+}
 
 static constexpr std::string_view tokens_header_stencil = R"__hpp(
 #pragma once
@@ -158,11 +273,17 @@ generate_symbols(std::ofstream &headern, std::ofstream &file) noexcept {
     MC_CHECK_EXIT(!current_ident.has_value(), "expected no more identifiers in symbols.cpp stencil");
 }
 
-void
-generate_ast(Language_Description ld, std::ofstream header, std::ofstream file) noexcept;
+static constexpr std::string_view ast_header_stencil = R"__hpp(
+#pragma once
+)__hpp";
+
+static constexpr std::string_view ast_file_stencil = R"__cpp(
+#include "ast.hpp"
+)__cpp";
 
 void
-generate_rules(Language_Description ld, std::ofstream header, std::ofstream file) noexcept;
+generate_ast(Language_Description ld, std::ofstream &header, std::ofstream &file) noexcept {
+}
 
 void
 generate_executable(std::filesystem::path output_dir) noexcept {
@@ -204,9 +325,19 @@ generate(Language_Description ld, std::filesystem::path output_dir) noexcept {
         generate_tokens(ld, tokens_header, tokens_file);
     }
     {
+        std::ofstream ast_header(output_dir / "src" / "ast.hpp");
+        std::ofstream ast_file(output_dir / "src" / "ast.cpp");
+        generate_ast(ld, ast_header, ast_file);
+    }
+    {
         std::ofstream tokens_header(output_dir / "src" / "symbols.hpp");
         std::ofstream tokens_file(output_dir / "src" / "symbols.cpp");
         generate_symbols(tokens_header, tokens_file);
+    }
+    {
+        std::ofstream lexer(output_dir / "src" / "lexer.l");
+        std::ofstream parser(output_dir / "src" / "parser.y");
+        generate_lex_lexer_yacc_parser(ld, lexer, parser);
     }
 
     generate_executable(output_dir);

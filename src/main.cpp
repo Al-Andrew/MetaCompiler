@@ -560,16 +560,16 @@ main(int argc, char **argv) {
     ifs >> language_description;
     ifs.close();
 
-    init_directory_structure(options.output_dir);
-    begin_lexer_parser();
-    generate_lexer(language_description);
-    generate_parser_options(language_description);
-    generate_parser(language_description);
-    finalize_lexer_parser();
-    generate_ast_h(language_description);
-    generate_ast_c(language_description);
-    generate_rules_h(language_description);
-    generate_rules_c(language_description);
+    // init_directory_structure(options.output_dir);
+    // begin_lexer_parser();
+    // generate_lexer(language_description);
+    // generate_parser_options(language_description);
+    // generate_parser(language_description);
+    // finalize_lexer_parser();
+    // generate_ast_h(language_description);
+    // generate_ast_c(language_description);
+    // generate_rules_h(language_description);
+    // generate_rules_c(language_description);
     // generate_makefile(language_description);
 
     // close all streams
