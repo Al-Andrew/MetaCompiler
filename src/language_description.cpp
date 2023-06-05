@@ -13,7 +13,7 @@ namespace mc {
 
 [[nodiscard]] std::string
 Token::enum_name() const noexcept {
-    std::string result = "TKN_";
+    std::string result = "TKN_ID_";
 
     for (auto c : name) {
         if (std::isalnum(c)) {
@@ -25,8 +25,16 @@ Token::enum_name() const noexcept {
 
     return result;
 }
+[[nodiscard]] std::string
+Token::matcher_text() const noexcept {
+    if (!is_regex) {
+        return '"' + match + '\"';
+    } else {
+        return match;
+    }
+}
 
-Language_Description
+[[nodiscard]] Language_Description
 Language_Description::new_from_json(std::filesystem::path path) noexcept {
     MC_TRACE_FUNCTION("");
 
@@ -107,22 +115,54 @@ Language_Description::new_from_json(std::filesystem::path path) noexcept {
 }
 
 void
-Language_Description::validate_rules() const noexcept {
+Language_Description::validate_rules() noexcept {
+    MC_TRACE_FUNCTION("");
 
+    // check no duplicate rules
+    for (size_t i = 0; i < rules.size(); ++i) {
+        for (size_t j = i + 1; j < rules.size(); ++j) {
+            MC_CHECK_EXIT(rules[i].name != rules[j].name, "duplicate rule name: {}", rules[i].name);
+        }
+    }
+    // check no duplicate tokens
+    for (size_t i = 0; i < tokens.size(); ++i) {
+        for (size_t j = i + 1; j < tokens.size(); ++j) {
+            MC_CHECK_EXIT(tokens[i].name != tokens[j].name, "duplicate token name: {}", tokens[i].name);
+        }
+    }
+    // check no duplicate construction tags in the same rule
     for (const auto &rule : rules) {
-        for (const auto &construction : rule.constructions) {
+        for (size_t i = 0; i < rule.constructions.size(); ++i) {
+            for (size_t j = i + 1; j < rule.constructions.size(); ++j) {
+                MC_CHECK_EXIT(
+                    rule.constructions[i].tag != rule.constructions[j].tag,
+                    "duplicate construction tag: {} in rule: {}", rule.constructions[i].tag, rule.name);
+            }
+        }
+    }
+    // check no rule name same as token name
+    for (const auto &rule : rules) {
+        for (const auto &token : tokens) {
+            MC_CHECK_EXIT(rule.name != token.name, "rule name and token name conflict: {}", rule.name);
+        }
+    }
+    // check all construction symbols are either tokens or rules
+    for (auto &rule : rules) {
+        for (auto &construction : rule.constructions) {
             for (const auto &symbol : construction.symbols) {
                 bool found = false;
 
                 for (const auto &token : tokens) {
                     if (token.name == symbol) {
                         found = true;
+                        construction.symbols_variant.emplace_back(token);
                         break;
                     }
                 }
                 for (const auto &rule : rules) {
                     if (rule.name == symbol) {
                         found = true;
+                        construction.symbols_variant.emplace_back(rule);
                         break;
                     }
                 }

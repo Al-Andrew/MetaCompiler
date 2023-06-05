@@ -1,6 +1,7 @@
 #pragma once
 #include <filesystem>
 #include <string>
+#include <variant>
 #include <vector>
 
 namespace mc {
@@ -16,24 +17,28 @@ struct Token {
 
     [[nodiscard]] std::string
     enum_name() const noexcept;
+    [[nodiscard]] std::string
+    matcher_text() const noexcept;
 };
 
-struct Construction {
-    std::string              tag;
-    std::vector<std::string> symbols;
-    std::string              action;
-
-    Construction(std::string tag, std::vector<std::string> symbols, std::string action)
-        : tag(std::move(tag)), symbols(std::move(symbols)), action(std::move(action)) {
-    }
-};
-
+struct Construction;
 struct Rule {
     std::string               name;
     std::vector<Construction> constructions;
 
     Rule(std::string name, std::vector<Construction> constructions)
         : name(std::move(name)), constructions(std::move(constructions)) {
+    }
+};
+
+struct Construction {
+    std::string                            tag;
+    std::vector<std::string>               symbols;
+    std::string                            action;
+    std::vector<std::variant<Token, Rule>> symbols_variant;
+
+    Construction(std::string tag, std::vector<std::string> symbols, std::string action)
+        : tag(std::move(tag)), symbols(std::move(symbols)), action(std::move(action)) {
     }
 };
 
@@ -48,7 +53,7 @@ struct Language_Description {
     new_from_json(std::filesystem::path path) noexcept;
 
     void
-    validate_rules() const noexcept;
+    validate_rules() noexcept;
 };
 
 }  // namespace mc
