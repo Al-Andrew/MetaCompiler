@@ -12,6 +12,21 @@ using json = nlohmann::json;
 namespace mc {
 
 [[nodiscard]] std::string
+Token::full_enum_name() const noexcept {
+    std::string result = "Token_Type::TKN_ID_";
+
+    for (auto c : name) {
+        if (std::isalnum(c)) {
+            result += std::toupper(c);
+        } else {
+            result += '_';
+        }
+    }
+
+    return result;
+}
+
+[[nodiscard]] std::string
 Token::enum_name() const noexcept {
     std::string result = "TKN_ID_";
 
@@ -32,6 +47,45 @@ Token::matcher_text() const noexcept {
     } else {
         return match;
     }
+}
+
+[[nodiscard]] std::string
+Rule::ast_node_name() const noexcept {
+    std::string result = "Ast_Node_";
+
+    for (auto c : name) {
+        if (std::isalnum(c)) {
+            result += std::toupper(c);
+        } else {
+            result += '_';
+        }
+    }
+
+    return result;
+}
+
+[[nodiscard]] std::string
+Construction::ast_node_name(const std::string_view rule_name) const noexcept {
+    std::string result = "Ast_Node_Construction_";
+
+    for (auto c : rule_name) {
+        if (std::isalnum(c)) {
+            result += std::toupper(c);
+        } else {
+            result += '_';
+        }
+    }
+    result += '_';
+
+    for (auto c : tag) {
+        if (std::isalnum(c)) {
+            result += std::toupper(c);
+        } else {
+            result += '_';
+        }
+    }
+
+    return result;
 }
 
 [[nodiscard]] Language_Description
