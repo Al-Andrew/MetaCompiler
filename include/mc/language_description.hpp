@@ -48,6 +48,8 @@ struct Construction {
 
     [[nodiscard]] std::string
     ast_node_name(const std::string_view rule_name) const noexcept;
+    [[nodiscard]] std::string
+    format_action() const noexcept;
 };
 
 struct Language_Description {

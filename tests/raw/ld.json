@@ -76,7 +76,7 @@
                         "RPAREN",
                         "RBRACE"
                     ],
-                    "action": "$2($4)"
+                    "action": "printf(\"%s\\n\\n\", dynamic_cast<Ast_Node_Token*>($4)->token.value.c_str());"
                 }
             ]
         },
@@ -88,7 +88,7 @@
                     "symbols": [
                         "statement_list"
                     ],
-                    "action": "#include <stdio.h>\\n#include <stdlib.h>\\n#include <stdbool.h>\\n\\nint main() {\\n $0 return 0;\\n}"
+                    "action": "$0->traverse();"
                 }
             ]
         },
@@ -100,7 +100,7 @@
                     "symbols": [
                         "statement"
                     ],
-                    "action": "$0;"
+                    "action": "$0->traverse();"
                 },
                 {
                     "tag": "recursive",
@@ -108,7 +108,7 @@
                         "statement",
                         "statement_list"
                     ],
-                    "action": "$0\\n$1"
+                    "action": "$0->traverse(); $1->traverse();"
                 }
             ]
         },
@@ -126,7 +126,7 @@
                         "statement_list",
                         "RBRACE"
                     ],
-                    "action": "if ($2) {\\n $5\\n}"
+                    "action": "if ( dynamic_cast<Ast_Node_Token*>($2->children[0])->token.type == Token_Type::TKN_ID_BOOL_LITERAL_TRUE ) { $5->traverse(); }"
                 },
                 {
                     "tag": "builtin_statement",
@@ -134,7 +134,7 @@
                         "builtin",
                         "SEMICOLON"
                     ],
-                    "action": "$0"
+                    "action": "$0->traverse();"
                 }
             ]
         },
@@ -146,14 +146,14 @@
                     "symbols": [
                         "BOOL_LITERAL_TRUE"
                     ],
-                    "action": "true"
+                    "action": ""
                 },
                 {
                     "tag": "bool_literal_false",
                     "symbols": [
                         "BOOL_LITERAL_FALSE"
                     ],
-                    "action": "false"
+                    "action": ""
                 }
             ]
         }
