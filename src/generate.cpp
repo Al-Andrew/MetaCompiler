@@ -71,8 +71,11 @@ generate_makefile(Language_Description ld, std::ofstream &proj, std::ofstream &s
 
 static constexpr std::string_view lex_stencil = R"__lex(
 %{
-#include "parser.hpp"
+#include "tokens.hpp"
 #include "ast.hpp"
+#include "parser.hpp"
+
+unsigned int column_number = 1;
 %}
 
 %option noyywrap
@@ -81,10 +84,10 @@ static constexpr std::string_view lex_stencil = R"__lex(
 
 /* @tokens */
 
-[ \t] ;
-\n {yylineno++;}
+[ \t] { column_number++; }
+\n {yylineno++; column_number = 1;}
 "//".*$ {;}
-. {return yytext[0];}
+. { column_number++; return yytext[0];}
 
 %%
 )__lex";
@@ -93,14 +96,17 @@ static constexpr std::string_view yacc_stencil = R"__yacc(
 %{
 #include <stdio.h>
 #include "ast.hpp"
+#include "tokens.hpp"
 #include "lexer.hpp"
 
-extern int yyerror(char * s);
+extern int yyerror(const char * s);
+
+Ast_Node* ast_root = nullptr;
 %}
 
 %union {
-    struct _Ast_Node* node;
-} 
+    Ast_Node* ast_node;
+}
 
 /* @tokens_types */
 /* @rules_types */
@@ -111,8 +117,9 @@ extern int yyerror(char * s);
 /* @rules */
 
 %%
-int yyerror(char * s) {
+int yyerror(const char * s) {
     printf("[Line: %d] Error: %s\n", yylineno, s);
+    return 0;
 }
 
 int main(int argc, char** argv){
@@ -125,7 +132,7 @@ int main(int argc, char** argv){
     yyin=fopen(argv[1],"r");
     yyparse();
     printf("Parsing complete.\n\n");
-    // ast_node_print(ast_root, 0);
+    ast_root->print();
 
     FILE* stream = fopen(argv[2], "w");
     // translate_AST_NODE(stream, ast_root);
@@ -146,7 +153,10 @@ generate_lex_lexer_yacc_parser(Language_Description ld, std::ofstream &lexer, st
     MC_CHECK_EXIT(current_ident.has_value(), "expected \"@tokens\" identifier in lexer.l stencil");
 
     for (auto token : ld.tokens) {
-        lexer_stencil.file << token.matcher_text() << " { return " << token.enum_name() << "; }\n";
+        lexer_stencil.file << token.matcher_text() << " { column_number += yyleng; "
+                           << "yylval.ast_node = Ast_Node_Token::make(Token{" << token.full_enum_name()
+                           << ", yytext, (unsigned int)yylineno, column_number}); "
+                           << "return " << token.enum_name() << "; }\n";
     }
     current_ident = lexer_stencil.push_untill_identifier();
     MC_CHECK_EXIT(!current_ident.has_value(), "expected no more identifiers in lexer.l stencil");
@@ -156,13 +166,13 @@ generate_lex_lexer_yacc_parser(Language_Description ld, std::ofstream &lexer, st
     current_ident = parser_stencil.push_untill_identifier();
     MC_CHECK_EXIT(current_ident.has_value(), "expected \"@tokens_types\" identifier in parser.y stencil");
     for (const auto &token : ld.tokens) {
-        parser_stencil.file << "%token <node>" << token.enum_name() << "\n";
+        parser_stencil.file << "%token <ast_node>" << token.enum_name() << "\n";
     }
 
     current_ident = parser_stencil.push_untill_identifier();
     MC_CHECK_EXIT(current_ident.has_value(), "expected \"@rules_types\" identifier in parser.y stencil");
     for (const auto &rule : ld.rules) {
-        parser_stencil.file << "%type <node>" << rule.name << "\n";
+        parser_stencil.file << "%type <ast_node>" << rule.name << "\n";
     }
 
     current_ident = parser_stencil.push_untill_identifier();
@@ -181,8 +191,18 @@ generate_lex_lexer_yacc_parser(Language_Description ld, std::ofstream &lexer, st
                     parser_stencil.file << r->name << " ";
                 }
             }
-            // TODO: add actions
-            parser_stencil.file << "{;}\n";
+            parser_stencil.file << "{ $$ = " << construction.ast_node_name(rule.name) << "::make(";
+            for (unsigned int i = 0; i < construction.symbols_variant.size(); i++) {
+                parser_stencil.file << "$" << i + 1;
+                if (i != construction.symbols_variant.size() - 1) parser_stencil.file << ", ";
+            }
+            parser_stencil.file << ");";
+
+            if (rule.name == ld.start_rule) {
+                parser_stencil.file << " ast_root = $$; ";
+            }
+
+            parser_stencil.file << "}\n";
         }
     }
 
@@ -192,7 +212,7 @@ generate_lex_lexer_yacc_parser(Language_Description ld, std::ofstream &lexer, st
 
 static constexpr std::string_view tokens_header_stencil = R"__hpp(
 #pragma once
-#include <string_view>
+#include <string>
 
 enum class Token_Type : unsigned int {
 /* @tokens */
@@ -200,7 +220,7 @@ enum class Token_Type : unsigned int {
 
 struct Token {
     Token_Type type;
-    std::string_view value;
+    std::string value;
     unsigned int line;
     unsigned int column;
 };
@@ -232,49 +252,49 @@ generate_tokens(Language_Description ld, std::ofstream &header, std::ofstream &f
     MC_CHECK_EXIT(!current_ident.has_value(), "expected no more identifiers in tokens.cpp stencil");
 }
 
-static constexpr std::string_view symbols_header_stencil = R"__hpp(
+static constexpr std::string_view ast_header_stencil = R"__hpp(
 #pragma once
 #include "tokens.hpp"
 
-enum class Symbol_Type : unsigned int {
-    SYMBOL_TOKEN,
-    SYMBOL_RULE,
+#include <vector>
+#include <iostream>
+
+struct Ast_Node {
+    std::vector<Ast_Node*> children;
+
+    Ast_Node(std::vector<Ast_Node*> children) : children(children) {}
+
+    virtual const char* get_name() = 0;
+
+    virtual void print(unsigned int indent = 0) {
+        std::string indent_str(indent, ' ');
+        std::cout << indent_str << "-" << get_name() << "\n";
+        for (auto child : children) {
+            child->print(indent + 1);
+        }
+    }
 };
 
-struct Symbol {
-    Symbol_Type type;
-    union {
-        Token m_token;
-        // Rule m_rule;
-    };
+struct Ast_Node_Token : public Ast_Node {
+    Token token;
 
-    [[nodiscard]] inline bool is_token() const noexcept { return this.type == SYMBOL_TOKEN; };
-    [[nodiscard]] inline Token& token() noexcept { return this.m_token; }
-    [[nodiscard]] inline const Token& token() const noexcept { return this.m_token; }
-    [[nodiscard]] inline bool is_rule() const noexcept { return this.type == SYMBOL_RULE; };
-    // [[nodiscard]] inline Rule& rule() noexcept { return this.rule; }
-    // [[nodiscard]] inline const Rule& rule() const noexcept { return this.rule; }
+    Ast_Node_Token(std::vector<Ast_Node*> children, Token token) : Ast_Node(children), token(token) {}
+
+    static Ast_Node_Token* make(Token token) {
+        return new Ast_Node_Token{std::vector<Ast_Node*>{}, token};
+    }
+
+    virtual const char* get_name() override {
+        return "Ast_Node_Token";
+    }
+
+    virtual void print(unsigned int indent = 0) override {
+        std::string indent_str(indent, ' ');
+        std::cout << indent_str << "-" << get_name() << " : " << token.value << "\n";
+    }
 };
 
-)__hpp";
-static constexpr std::string_view symbols_file_stencil   = R"__cpp()__cpp";
-
-void
-generate_symbols(std::ofstream &headern, std::ofstream &file) noexcept {
-    MC_TRACE_FUNCTION("");
-    using mc::Stencil;
-
-    Stencil header_stencil(symbols_header_stencil, headern);
-    Stencil file_stencil(symbols_file_stencil, file);
-
-    auto current_ident = header_stencil.push_untill_identifier();
-    MC_CHECK_EXIT(!current_ident.has_value(), "expected no more identifiers in symbols.hpp stencil");
-    current_ident = file_stencil.push_untill_identifier();
-    MC_CHECK_EXIT(!current_ident.has_value(), "expected no more identifiers in symbols.cpp stencil");
-}
-
-static constexpr std::string_view ast_header_stencil = R"__hpp(
-#pragma once
+/* @ast_nodes */
 )__hpp";
 
 static constexpr std::string_view ast_file_stencil = R"__cpp(
@@ -283,6 +303,69 @@ static constexpr std::string_view ast_file_stencil = R"__cpp(
 
 void
 generate_ast(Language_Description ld, std::ofstream &header, std::ofstream &file) noexcept {
+    MC_TRACE_FUNCTION("");
+
+    using mc::Stencil;
+    Stencil header_stencil(ast_header_stencil, header);
+    Stencil file_stencil(ast_file_stencil, file);
+
+    auto current_ident = header_stencil.push_untill_identifier();
+    MC_CHECK_EXIT(current_ident.has_value(), "expected \"@ast_nodes\" identifier in ast.hpp stencil");
+    for (const auto &rule : ld.rules) {
+        header_stencil.file << "struct " << rule.ast_node_name() << " : public Ast_Node {\n";
+        {  // constructor
+            header_stencil.file << "    " << rule.ast_node_name() << "(std::vector<Ast_Node*> children) : "
+                                << "Ast_Node(children) {}\n";
+        }
+        header_stencil.file << "};\n";
+
+        for (const auto &construction : rule.constructions) {
+            header_stencil.file << "struct " << construction.ast_node_name(rule.name) << " : public "
+                                << rule.ast_node_name() << " {\n";
+            {  // constructor
+                header_stencil.file << "    " << construction.ast_node_name(rule.name)
+                                    << "(std::vector<Ast_Node*> children) : " << rule.ast_node_name()
+                                    << "(children) {}\n";
+            }
+            {  // make(...)
+                header_stencil.file << "    static " << construction.ast_node_name(rule.name) << "* make(";
+
+                for (unsigned int i = 0; i < construction.symbols_variant.size(); ++i) {
+                    const auto &symbol = construction.symbols_variant[i];
+
+                    header_stencil.file << "Ast_Node"
+                                        << "* "
+                                        << "p" << i;
+
+                    if (i != construction.symbols_variant.size() - 1) {
+                        header_stencil.file << ", ";
+                    }
+                }
+
+                header_stencil.file << ") {\n";
+                header_stencil.file << "        return new " << construction.ast_node_name(rule.name)
+                                    << "{std::vector<Ast_Node*>{";
+
+                for (unsigned int i = 0; i < construction.symbols_variant.size(); ++i) {
+                    const auto &symbol = construction.symbols_variant[i];
+                    header_stencil.file << "p" << i;
+                    ;
+
+                    if (i != construction.symbols_variant.size() - 1) {
+                        header_stencil.file << ", ";
+                    }
+                }
+                header_stencil.file << "}};\n}\n";
+            }
+            {  // get_name
+                header_stencil.file << "    virtual const char* get_name() override {\n";
+                header_stencil.file << "        return \"" << construction.ast_node_name(rule.name) << "\";\n";
+                header_stencil.file << "    }\n";
+            }
+        }
+
+        header_stencil.file << "};\n";
+    }
 }
 
 void
@@ -328,11 +411,6 @@ generate(Language_Description ld, std::filesystem::path output_dir) noexcept {
         std::ofstream ast_header(output_dir / "src" / "ast.hpp");
         std::ofstream ast_file(output_dir / "src" / "ast.cpp");
         generate_ast(ld, ast_header, ast_file);
-    }
-    {
-        std::ofstream tokens_header(output_dir / "src" / "symbols.hpp");
-        std::ofstream tokens_file(output_dir / "src" / "symbols.cpp");
-        generate_symbols(tokens_header, tokens_file);
     }
     {
         std::ofstream lexer(output_dir / "src" / "lexer.l");

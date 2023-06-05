@@ -16,6 +16,8 @@ struct Token {
     }
 
     [[nodiscard]] std::string
+    full_enum_name() const noexcept;
+    [[nodiscard]] std::string
     enum_name() const noexcept;
     [[nodiscard]] std::string
     matcher_text() const noexcept;
@@ -29,6 +31,9 @@ struct Rule {
     Rule(std::string name, std::vector<Construction> constructions)
         : name(std::move(name)), constructions(std::move(constructions)) {
     }
+
+    [[nodiscard]] std::string
+    ast_node_name() const noexcept;
 };
 
 struct Construction {
@@ -40,6 +45,9 @@ struct Construction {
     Construction(std::string tag, std::vector<std::string> symbols, std::string action)
         : tag(std::move(tag)), symbols(std::move(symbols)), action(std::move(action)) {
     }
+
+    [[nodiscard]] std::string
+    ast_node_name(const std::string_view rule_name) const noexcept;
 };
 
 struct Language_Description {
