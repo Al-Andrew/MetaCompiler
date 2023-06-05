@@ -135,7 +135,7 @@ int main(int argc, char** argv){
     ast_root->print();
 
     FILE* stream = fopen(argv[2], "w");
-    // translate_AST_NODE(stream, ast_root);
+    ast_root->traverse();
     return 0;
 }
 
@@ -268,6 +268,7 @@ struct Ast_Node {
     std::vector<Ast_Node*> children;
 
     Ast_Node(std::vector<Ast_Node*> children) : children(children) {}
+    virtual ~Ast_Node();
 
     virtual const char* get_name() = 0;
 
@@ -278,6 +279,8 @@ struct Ast_Node {
             child->print(indent + 1);
         }
     }
+
+    virtual void traverse() = 0;
 };
 
 struct Ast_Node_Token : public Ast_Node {
@@ -297,6 +300,8 @@ struct Ast_Node_Token : public Ast_Node {
         std::string indent_str(indent, ' ');
         std::cout << indent_str << "-" << get_name() << " : " << token.value << "\n";
     }
+
+    virtual void traverse() override {}
 };
 
 /* @ast_nodes */
@@ -304,6 +309,13 @@ struct Ast_Node_Token : public Ast_Node {
 
 static constexpr std::string_view ast_file_stencil = R"__cpp(
 #include "ast.hpp"
+
+Ast_Node::~Ast_Node(){
+    for (auto child : children) {
+        delete child;
+    }
+}
+
 )__cpp";
 
 void
@@ -316,11 +328,17 @@ generate_ast(Language_Description ld, std::ofstream &header, std::ofstream &file
 
     auto current_ident = header_stencil.push_untill_identifier();
     MC_CHECK_EXIT(current_ident.has_value(), "expected \"@ast_nodes\" identifier in ast.hpp stencil");
+    current_ident = file_stencil.push_untill_identifier();
+    MC_CHECK_EXIT(!current_ident.has_value(), "expected no more identifiers in ast.cpp stencil");
     for (const auto &rule : ld.rules) {
         header_stencil.file << "struct " << rule.ast_node_name() << " : public Ast_Node {\n";
         {  // constructor
             header_stencil.file << "    " << rule.ast_node_name() << "(std::vector<Ast_Node*> children) : "
                                 << "Ast_Node(children) {}\n";
+        }
+        {  // virtual destructor
+            header_stencil.file << "    virtual ~" << rule.ast_node_name() << "();\n";
+            file_stencil.file << rule.ast_node_name() << "::~" << rule.ast_node_name() << "() {}\n";
         }
         header_stencil.file << "};\n";
 
@@ -333,9 +351,13 @@ generate_ast(Language_Description ld, std::ofstream &header, std::ofstream &file
                                     << "(std::vector<Ast_Node*> children) : " << rule.ast_node_name()
                                     << "(children) {}\n\n";
             }
+            {  // virtual destructor
+                header_stencil.file << "    virtual ~" << construction.ast_node_name(rule.name) << "();\n\n";
+                file_stencil.file << construction.ast_node_name(rule.name) << "::~"
+                                  << construction.ast_node_name(rule.name) << "() {}\n\n";
+            }
             {  // make(...)
                 header_stencil.file << "    static " << construction.ast_node_name(rule.name) << "* make(";
-
                 for (unsigned int i = 0; i < construction.symbols_variant.size(); ++i) {
                     const auto &symbol = construction.symbols_variant[i];
 
@@ -347,26 +369,53 @@ generate_ast(Language_Description ld, std::ofstream &header, std::ofstream &file
                         header_stencil.file << ", ";
                     }
                 }
+                header_stencil.file << ");\n\n";
 
-                header_stencil.file << ") {\n";
-                header_stencil.file << "        return new " << construction.ast_node_name(rule.name)
-                                    << "{std::vector<Ast_Node*>{";
+                file_stencil.file << "    " << construction.ast_node_name(rule.name) << "* "
+                                  << construction.ast_node_name(rule.name) << "::make(";
 
                 for (unsigned int i = 0; i < construction.symbols_variant.size(); ++i) {
                     const auto &symbol = construction.symbols_variant[i];
-                    header_stencil.file << "p" << i;
+
+                    file_stencil.file << "Ast_Node"
+                                      << "* "
+                                      << "p" << i;
+
+                    if (i != construction.symbols_variant.size() - 1) {
+                        file_stencil.file << ", ";
+                    }
+                }
+
+                file_stencil.file << ") {\n";
+                file_stencil.file << "        return new " << construction.ast_node_name(rule.name)
+                                  << "{std::vector<Ast_Node*>{";
+
+                for (unsigned int i = 0; i < construction.symbols_variant.size(); ++i) {
+                    const auto &symbol = construction.symbols_variant[i];
+                    file_stencil.file << "p" << i;
                     ;
 
                     if (i != construction.symbols_variant.size() - 1) {
-                        header_stencil.file << ", ";
+                        file_stencil.file << ", ";
                     }
                 }
-                header_stencil.file << "}};\n    }\n";
+                file_stencil.file << "}};\n    }\n";
             }
             {  // get_name
-                header_stencil.file << "    virtual const char* get_name() override {\n";
-                header_stencil.file << "        return \"" << construction.ast_node_name(rule.name) << "\";\n";
-                header_stencil.file << "    }\n";
+                header_stencil.file << "    virtual const char* get_name() override;\n";
+
+                file_stencil.file << "    const char* " << construction.ast_node_name(rule.name) << "::get_name() {\n";
+                file_stencil.file << "        return \"" << construction.ast_node_name(rule.name) << "\";\n";
+                file_stencil.file << "    }\n";
+            }
+            {  // traverse
+                header_stencil.file << "    virtual void traverse() override;\n";
+
+                file_stencil.file << "    void " << construction.ast_node_name(rule.name) << "::traverse() {\n";
+                MC_DEBUG("format_action: {}", construction.format_action());
+                MC_DEBUG("action: {}", construction.action);
+                file_stencil.file << construction.format_action();
+                file_stencil.file << "\n    }\n";
             }
             // end struct
             header_stencil.file << "};\n\n";
@@ -382,7 +431,7 @@ generate_executable(std::filesystem::path output_dir) noexcept {
     std::filesystem::current_path(output_dir);
 
     std::filesystem::create_directory("build");
-    std::system("cmake -B build/ -S .");
+    std::system("cmake -DCMAKE_BUILD_TYPE=Debug -B build/ -S .");
     std::system("cmake --build build/");
 
     std::filesystem::current_path(original_path);

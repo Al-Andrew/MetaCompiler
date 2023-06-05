@@ -88,6 +88,30 @@ Construction::ast_node_name(const std::string_view rule_name) const noexcept {
     return result;
 }
 
+[[nodiscard]] std::string
+Construction::format_action() const noexcept {
+    std::stringstream sos{};
+    std::stringstream sis = std::stringstream(action);
+    sis >> std::noskipws;
+    while (!sis.eof()) {
+        char c{0};
+        sis >> c;
+
+        if (c == '\0' || sis.eof()) break;
+
+        if (c == '$') {  // TODO escape
+            unsigned int index;
+            sis >> index;
+            MC_CHECK_EXIT(index < symbols.size(), "index out of bounds in action for construction {}", tag);
+            sos << "children[" << index << "]";
+        } else {
+            sos << c;
+        }
+    }
+
+    return sos.str();
+}
+
 [[nodiscard]] Language_Description
 Language_Description::new_from_json(std::filesystem::path path) noexcept {
     MC_TRACE_FUNCTION("");
