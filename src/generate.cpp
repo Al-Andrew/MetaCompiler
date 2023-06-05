@@ -183,7 +183,8 @@ generate_lex_lexer_yacc_parser(Language_Description ld, std::ofstream &lexer, st
     MC_CHECK_EXIT(current_ident.has_value(), "expected \"@rules\" identifier in parser.y stencil");
     for (const auto &rule : ld.rules) {
         parser_stencil.file << rule.name << " : ";
-        for (const auto &construction : rule.constructions) {
+        for (unsigned int i = 0; i < rule.constructions.size(); i++) {
+            const auto &construction = rule.constructions[i];
             for (const auto &symbol : construction.symbols_variant) {
                 if (const Token *t = std::get_if<Token>(&symbol)) {
                     parser_stencil.file << t->enum_name() << " ";
@@ -203,6 +204,10 @@ generate_lex_lexer_yacc_parser(Language_Description ld, std::ofstream &lexer, st
             }
 
             parser_stencil.file << "}\n";
+
+            if (i != rule.constructions.size() - 1) {
+                parser_stencil.file << "| ";
+            }
         }
     }
 
@@ -320,12 +325,13 @@ generate_ast(Language_Description ld, std::ofstream &header, std::ofstream &file
         header_stencil.file << "};\n";
 
         for (const auto &construction : rule.constructions) {
+            // start struct
             header_stencil.file << "struct " << construction.ast_node_name(rule.name) << " : public "
                                 << rule.ast_node_name() << " {\n";
             {  // constructor
                 header_stencil.file << "    " << construction.ast_node_name(rule.name)
                                     << "(std::vector<Ast_Node*> children) : " << rule.ast_node_name()
-                                    << "(children) {}\n";
+                                    << "(children) {}\n\n";
             }
             {  // make(...)
                 header_stencil.file << "    static " << construction.ast_node_name(rule.name) << "* make(";
@@ -355,16 +361,17 @@ generate_ast(Language_Description ld, std::ofstream &header, std::ofstream &file
                         header_stencil.file << ", ";
                     }
                 }
-                header_stencil.file << "}};\n}\n";
+                header_stencil.file << "}};\n    }\n";
             }
             {  // get_name
                 header_stencil.file << "    virtual const char* get_name() override {\n";
                 header_stencil.file << "        return \"" << construction.ast_node_name(rule.name) << "\";\n";
                 header_stencil.file << "    }\n";
             }
+            // end struct
+            header_stencil.file << "};\n\n";
         }
-
-        header_stencil.file << "};\n";
+        header_stencil.file << "\n";
     }
 }
 
@@ -372,17 +379,13 @@ void
 generate_executable(std::filesystem::path output_dir) noexcept {
     MC_TRACE_FUNCTION("");
     std::filesystem::path original_path = std::filesystem::current_path();
-    MC_DEBUG("cwd \"{}\"", std::filesystem::current_path().string());
     std::filesystem::current_path(output_dir);
-    MC_DEBUG("cwd \"{}\"", std::filesystem::current_path().string());
 
     std::filesystem::create_directory("build");
     std::system("cmake -B build/ -S .");
-    MC_DEBUG("cwd \"{}\"", std::filesystem::current_path().string());
     std::system("cmake --build build/");
 
     std::filesystem::current_path(original_path);
-    MC_DEBUG("cwd \"{}\"", std::filesystem::current_path().string());
 }
 
 void
