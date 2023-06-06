@@ -1,7 +1,7 @@
 {
     "meta": {
-        "name": "neodymium",
-        "bin": "nc",
+        "name": "test",
+        "bin": "tc",
         "version": "0.0.1"
     },
     "tokens": [

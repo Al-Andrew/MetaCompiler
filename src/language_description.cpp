@@ -177,7 +177,7 @@ Language_Description::new_from_json(std::filesystem::path path) noexcept {
                 MC_CHECK_EXIT(s.is_string(), "expected construction to contain an array of strings \"symbols\"");
                 symbols.emplace_back(s.get<std::string>());
             }
-            MC_CHECK_EXIT(c.contains("action"), "expected construction to contain \"action\"");
+            MC_CHECK_EXIT(c.contains("action"), "expected construction {} of rule {} to contain \"action\"", tag, name);
             MC_CHECK_EXIT(c["action"].is_string(), "expected construction to contain a string \"action\"");
             std::string action = c["action"].get<std::string>();
             constructions.emplace_back(tag, symbols, action);

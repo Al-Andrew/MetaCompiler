@@ -1,0 +1,323 @@
+{
+    "meta": {
+        "name": "neodymium",
+        "bin": "nc",
+        "version": "0.0.1"
+    },
+    "tokens": [
+        {
+            "name": "LPAREN",
+            "matcher": "(",
+            "is_regex": false
+        },
+        {
+            "name": "RPAREN",
+            "matcher": ")",
+            "is_regex": false
+        },
+        {
+            "name": "KEYWORD_LANG",
+            "matcher": "lang",
+            "is_regex": false
+        },
+        {
+            "name": "KEYWORD_TOKENS",
+            "matcher": "tokens",
+            "is_regex": false
+        },
+        {
+            "name": "KEYWORD_TEXT",
+            "matcher": "text",
+            "is_regex": false
+        },
+        {
+            "name": "KEYWORD_REGEX",
+            "matcher": "regex",
+            "is_regex": false
+        },
+        {
+            "name": "LITERAL_STRING",
+            "matcher": "\\\"[^\"]*\\\"",
+            "is_regex": true
+        },
+        {
+            "name": "KEYWORD_SYMBOLS",
+            "matcher": "symbols",
+            "is_regex": false
+        },
+        {
+            "name": "KEYWORD_CONSTRUCTIONS",
+            "matcher": "constructions",
+            "is_regex": false
+        },
+        {
+            "name": "KEYWORD_RULES",
+            "matcher": "rules",
+            "is_regex": false
+        },
+        {
+            "name": "KEYWORD_ACTION",
+            "matcher": "action",
+            "is_regex": false
+        },
+        {
+            "name": "LITERAL_CPP",
+            "matcher": "\\`[^\\`]*\\`",
+            "is_regex": true
+        },
+        {
+            "name": "KEYWORD_MAIN",
+            "matcher": "main",
+            "is_regex": false
+        }
+    ],
+    "rules": [
+        {
+            "name": "lang_def",
+            "constructions": [
+                {
+                    "tag": "base",
+                    "symbols": [
+                        "LPAREN",
+                        "KEYWORD_LANG",
+                        "LITERAL_STRING",
+                        "tokens_def",
+                        "rules_def",
+                        "main_def",
+                        "RPAREN"
+                    ],
+                    "action": ""
+                }
+            ]
+        },
+        {
+            "name": "token",
+            "constructions": [
+                {
+                    "tag": "text",
+                    "symbols": [
+                        "LPAREN",
+                        "KEYWORD_TEXT",
+                        "LITERAL_STRING",
+                        "LITERAL_STRING",
+                        "RPAREN"
+                    ],
+                    "action": ""
+                },
+                {
+                    "tag": "regex",
+                    "symbols": [
+                        "LPAREN",
+                        "KEYWORD_REGEX",
+                        "LITERAL_STRING",
+                        "LITERAL_STRING",
+                        "RPAREN"
+                    ],
+                    "action": ""
+                }
+            ]
+        },
+        {
+            "name": "tokens_list",
+            "constructions": [
+                {
+                    "tag": "base",
+                    "symbols": [
+                        "token"
+                    ],
+                    "action": ""
+                },
+                {
+                    "tag": "recursive",
+                    "symbols": [
+                        "token",
+                        "tokens_list"
+                    ],
+                    "action": ""
+                }
+            ]
+        },
+        {
+            "name": "tokens_def",
+            "constructions": [
+                {
+                    "tag": "base",
+                    "symbols": [
+                        "LPAREN",
+                        "KEYWORD_TOKENS",
+                        "tokens_list",
+                        "RPAREN"
+                    ],
+                    "action": ""
+                }
+            ]
+        },
+        {
+            "name": "action_def",
+            "constructions": [
+                {
+                    "tag": "empty",
+                    "symbols": [
+                        "LPAREN",
+                        "KEYWORD_ACTION",
+                        "LITERAL_CPP",
+                        "RPAREN"
+                    ],
+                    "action": ""
+                }
+            ]
+        },
+        {
+            "name": "symbols_list",
+            "constructions": [
+                {
+                    "tag": "base",
+                    "symbols": [
+                        "LITERAL_STRING"
+                    ],
+                    "action": ""
+                },
+                {
+                    "tag": "recursive",
+                    "symbols": [
+                        "LITERAL_STRING",
+                        "symbols_list"
+                    ],
+                    "action": ""
+                }
+            ]
+        },
+        {
+            "name": "symbols_def",
+            "constructions": [
+                {
+                    "tag": "base",
+                    "symbols": [
+                        "LPAREN",
+                        "KEYWORD_SYMBOLS",
+                        "symbols_list",
+                        "RPAREN"
+                    ],
+                    "action": ""
+                }
+            ]
+        },
+        {
+            "name": "construction",
+            "constructions": [
+                {
+                    "tag": "base",
+                    "symbols": [
+                        "LPAREN",
+                        "LITERAL_STRING",
+                        "symbols_def",
+                        "action_def",
+                        "RPAREN"
+                    ],
+                    "action": ""
+                }
+            ]
+        },
+        {
+            "name": "constructions_list",
+            "constructions": [
+                {
+                    "tag": "base",
+                    "symbols": [
+                        "construction"
+                    ],
+                    "action": ""
+                },
+                {
+                    "tag": "recursive",
+                    "symbols": [
+                        "construction",
+                        "constructions_list"
+                    ],
+                    "action": ""
+                }
+            ]
+        },
+        {
+            "name": "constructions_def",
+            "constructions": [
+                {
+                    "tag": "base",
+                    "symbols": [
+                        "LPAREN",
+                        "KEYWORD_CONSTRUCTIONS",
+                        "constructions_list",
+                        "RPAREN"
+                    ],
+                    "action": ""
+                }
+            ]
+        },
+        {
+            "name": "rule",
+            "constructions": [
+                {
+                    "tag": "base",
+                    "symbols": [
+                        "LPAREN",
+                        "LITERAL_STRING",
+                        "constructions_def",
+                        "RPAREN"
+                    ],
+                    "action": ""
+                }
+            ]
+        },
+        {
+            "name": "rules_list",
+            "constructions": [
+                {
+                    "tag": "base",
+                    "symbols": [
+                        "rule"
+                    ],
+                    "action": ""
+                },
+                {
+                    "tag": "recursive",
+                    "symbols": [
+                        "rule",
+                        "rules_list"
+                    ],
+                    "action": ""
+                }
+            ]
+        },
+        {
+            "name": "rules_def",
+            "constructions": [
+                {
+                    "tag": "base",
+                    "symbols": [
+                        "LPAREN",
+                        "KEYWORD_RULES",
+                        "rules_list",
+                        "RPAREN"
+                    ],
+                    "action": ""
+                }
+            ]
+        },
+        {
+            "name": "main_def",
+            "constructions": [
+                {
+                    "tag": "base",
+                    "symbols": [
+                        "LPAREN",
+                        "KEYWORD_MAIN",
+                        "LITERAL_CPP",
+                        "RPAREN"
+                    ],
+                    "action": ""
+                }
+            ]
+        }
+    ],
+    "start_rule": "lang_def"
+}
