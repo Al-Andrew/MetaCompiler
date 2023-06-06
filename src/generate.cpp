@@ -100,7 +100,7 @@ static constexpr std::string_view yacc_stencil = R"__yacc(
 #include "lexer.hpp"
 
 extern int yyerror(const char * s);
-
+extern unsigned int column_number;
 Ast_Node* ast_root = nullptr;
 %}
 
@@ -118,7 +118,7 @@ Ast_Node* ast_root = nullptr;
 
 %%
 int yyerror(const char * s) {
-    printf("[Line: %d] Error: %s\n", yylineno, s);
+    printf("[Line: %d][Col: %u] Error: %s\n", yylineno, column_number, s);
     return 0;
 }
 
