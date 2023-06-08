@@ -86,7 +86,7 @@
                         "main_def",
                         "RPAREN"
                     ],
-                    "action": ""
+                    "action": "        out_stream << \"{\\n    \\\"meta\\\": {\\n        \\\"name\\\": \" << dynamic_cast<Ast_Node_Token*>($2)->token.value << \",\\n        \\\"bin\\\": \\\"compiler\\\",\\n        \\\"version\\\": \\\"0.1.0\\\"\\n    },\\n\";\n        $3->traverse();\n        $4->traverse();"
                 }
             ]
         },
@@ -102,7 +102,7 @@
                         "LITERAL_STRING",
                         "RPAREN"
                     ],
-                    "action": ""
+                    "action": "        out_stream << \"        {\\n            \\\"name\\\":\" << dynamic_cast<Ast_Node_Token*>($2)->token.value << \",\\n            \\\"is_regex\\\": \\\"false\\\",\\n            \\\"value\\\": \" << dynamic_cast<Ast_Node_Token*>($3)->token.value << \"\\n        }\";\n"
                 },
                 {
                     "tag": "regex",
@@ -113,7 +113,7 @@
                         "LITERAL_STRING",
                         "RPAREN"
                     ],
-                    "action": ""
+                    "action": "        out_stream << \"        {\\n            \\\"name\\\":\" << dynamic_cast<Ast_Node_Token*>($2)->token.value << \",\\n            \\\"is_regex\\\": \\\"true\\\",\\n            \\\"value\\\": \" << dynamic_cast<Ast_Node_Token*>($3)->token.value << \"\\n        }\";\n"
                 }
             ]
         },
@@ -125,7 +125,7 @@
                     "symbols": [
                         "token"
                     ],
-                    "action": ""
+                    "action": "        $0->traverse();\n"
                 },
                 {
                     "tag": "recursive",
@@ -133,7 +133,7 @@
                         "token",
                         "tokens_list"
                     ],
-                    "action": ""
+                    "action": "        $0->traverse();\n        if($1->children.size() > 0) out_stream << \",\\n\";\n        $1->traverse();\n"
                 }
             ]
         },
@@ -148,7 +148,7 @@
                         "tokens_list",
                         "RPAREN"
                     ],
-                    "action": ""
+                    "action": "        out_stream << \"    \\\"tokens\\\": [\\n\";\n        $2->traverse();\n        out_stream << \"\\n    ],\\n\";\n"
                 }
             ]
         },
@@ -163,7 +163,7 @@
                         "LITERAL_CPP",
                         "RPAREN"
                     ],
-                    "action": ""
+                    "action": "        out_stream << dynamic_cast<Ast_Node_Token*>($2)->token.value;\n"
                 }
             ]
         },
@@ -175,7 +175,7 @@
                     "symbols": [
                         "LITERAL_STRING"
                     ],
-                    "action": ""
+                    "action": "        out_stream << \"                \" << dynamic_cast<Ast_Node_Token*>($0)->token.value;\n"
                 },
                 {
                     "tag": "recursive",
@@ -183,7 +183,7 @@
                         "LITERAL_STRING",
                         "symbols_list"
                     ],
-                    "action": ""
+                    "action": "        out_stream << \"                \" << dynamic_cast<Ast_Node_Token*>($0)->token.value;\n        if($1->children.size() > 0) out_stream << \",\\n\";\n        $1->traverse();\n"
                 }
             ]
         },
@@ -198,7 +198,7 @@
                         "symbols_list",
                         "RPAREN"
                     ],
-                    "action": ""
+                    "action": "         $2->traverse();\n"
                 }
             ]
         },
@@ -214,7 +214,7 @@
                         "action_def",
                         "RPAREN"
                     ],
-                    "action": ""
+                    "action": "        out_stream << \"        {\\n            \\\"tag\\\": \" << dynamic_cast<Ast_Node_Token*>($1)->token.value << \",\\n            \\\"symbols\\\": [\\n\";\n        $2->traverse();\n        out_stream << \"\\n            ],\\n            \\\"action\\\": \";         $3->traverse();\n         out_stream << \"\\n        }\";\n"
                 }
             ]
         },
@@ -226,7 +226,7 @@
                     "symbols": [
                         "construction"
                     ],
-                    "action": ""
+                    "action": "        $0->traverse();\n"
                 },
                 {
                     "tag": "recursive",
@@ -234,7 +234,7 @@
                         "construction",
                         "constructions_list"
                     ],
-                    "action": ""
+                    "action": "        $0->traverse();\n        if($1->children.size() > 0) out_stream << \",\\n\";\n        $1->traverse();\n"
                 }
             ]
         },
@@ -249,7 +249,7 @@
                         "constructions_list",
                         "RPAREN"
                     ],
-                    "action": ""
+                    "action": "        $2->traverse();\n"
                 }
             ]
         },
@@ -264,7 +264,7 @@
                         "constructions_def",
                         "RPAREN"
                     ],
-                    "action": ""
+                    "action": "        out_stream << \"        {\\n            \\\"name\\\": \" << dynamic_cast<Ast_Node_Token*>($1)->token.value << \",\\n            \\\"constructions\\\": [\\n\";\n        $2->traverse();\n        out_stream << \"\\n            ]\\n        }\";\n"
                 }
             ]
         },
@@ -276,7 +276,7 @@
                     "symbols": [
                         "rule"
                     ],
-                    "action": ""
+                    "action": "       $0->traverse();\n"
                 },
                 {
                     "tag": "recursive",
@@ -284,7 +284,7 @@
                         "rule",
                         "rules_list"
                     ],
-                    "action": ""
+                    "action": "        $0->traverse();\n        if($1->children.size() > 0) out_stream << \",\\n\";\n        $1->traverse();\n"
                 }
             ]
         },
@@ -299,7 +299,7 @@
                         "rules_list",
                         "RPAREN"
                     ],
-                    "action": ""
+                    "action": "        out_stream << \"    \\\"rules\\\": [\\n\";\n        $2->traverse();\n        out_stream << \"\\n    ]\\n\";\n"
                 }
             ]
         },
@@ -319,5 +319,6 @@
             ]
         }
     ],
-    "start_rule": "lang_def"
+    "start_rule": "lang_def",
+    "main": "#include <stdio.h>\n#include \"ast.hpp\"\n#include \"tokens.hpp\"\n#include \"lexer.hpp\"\n#include <fstream>\n \n\n extern Ast_Node* ast_root;\nextern void yyparse();\nextern std::ofstream out_stream;\n  \n\n int main(int argc, char** argv){ \n if(argc < 3) { printf(\"Usage: %s <input_file> <output_file>\\n\", argv[0]); return 1; } \n yyin=fopen(argv[1],\"r\");\n yyparse();\n printf(\"Parsing complete.\\n\\\n\");\n ast_root->print(); \n out_stream.open(argv[2]);  \n ast_root->traverse(); \n return 0; \n}"
 }

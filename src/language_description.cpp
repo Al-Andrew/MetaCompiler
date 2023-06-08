@@ -5,6 +5,8 @@
 
 // thirdparty
 #include "nlohmann/json.hpp"
+
+#include <optional>
 using json = nlohmann::json;
 // std:
 #include <fstream>
@@ -188,6 +190,13 @@ Language_Description::new_from_json(std::filesystem::path path) noexcept {
     MC_CHECK_EXIT(json_file.contains("start_rule"), "expected \"start_rule\" field");
     MC_CHECK_EXIT(json_file["start_rule"].is_string(), "expected \"start_rule\" field to be a string");
     result.start_rule = json_file["start_rule"].get<std::string>();
+
+    if (json_file.contains("main")) {
+        MC_CHECK_EXIT(json_file["main"].is_string(), "expected \"main\" field to be a string");
+        result.main = json_file["main"].get<std::string>();
+    } else {
+        result.main = std::nullopt;
+    }
 
     return result;
 }

@@ -1,5 +1,6 @@
 #pragma once
 #include <filesystem>
+#include <optional>
 #include <string>
 #include <variant>
 #include <vector>
@@ -53,11 +54,12 @@ struct Construction {
 };
 
 struct Language_Description {
-    std::string        name;
-    std::string        bin_name;
-    std::vector<Token> tokens;
-    std::vector<Rule>  rules;
-    std::string        start_rule;
+    std::string                name;
+    std::string                bin_name;
+    std::vector<Token>         tokens;
+    std::vector<Rule>          rules;
+    std::string                start_rule;
+    std::optional<std::string> main;
 
     [[nodiscard]] static Language_Description
     new_from_json(std::filesystem::path path) noexcept;
