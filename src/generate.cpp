@@ -1,5 +1,6 @@
 #include "mc/generate.hpp"
 
+#include "mc/language_description.hpp"
 #include "mc/logging.hpp"
 #include "mc/stencil.hpp"
 #include "mc/utils.hpp"
@@ -17,6 +18,7 @@ cmake_minimum_required(VERSION 3.22)
 project(/* @project_name */ LANGUAGES CXX)
 
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_SOURCE_DIR}/bin)
+set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY ${CMAKE_SOURCE_DIR}/bin/lib)
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
@@ -43,9 +45,14 @@ include_directories(${CMAKE_CURRENT_BINARY_DIR} ${CMAKE_CURRENT_SOURCE_DIR})
 
 set(SOURCES
     ast.cpp
+    ${BISON_Parser_OUTPUTS}
+    ${FLEX_Lexer_OUTPUTS}
 )
 
-add_executable(/* @bin */ ${SOURCES} ${BISON_Parser_OUTPUTS} ${FLEX_Lexer_OUTPUTS})
+add_library(language STATIC ${SOURCES})
+
+/* @add_executable */
+
 )__cmake";
 
 void
@@ -64,8 +71,12 @@ generate_makefile(Language_Description ld, std::ofstream &proj, std::ofstream &s
     Stencil src_stencil(cmake_src_stencil, src);
 
     current_ident = src_stencil.push_untill_identifier();
-    MC_CHECK_EXIT(current_ident.has_value(), "expected \"@bin_name\" identifier in src/CMakeLists.txt stencil");
-    src_stencil.file << ld.bin_name;
+    MC_CHECK_EXIT(current_ident.has_value(), "expected \"@add_executable\" identifier in src/CMakeLists.txt stencil");
+    if (ld.main.has_value()) {
+        src_stencil.file << "add_executable(" << ld.bin_name << " main.cpp)\n";
+        src_stencil.file << "target_link_libraries(" << ld.bin_name << " PRIVATE language)\n";
+    }
+
     current_ident = src_stencil.push_untill_identifier();
 }
 
@@ -98,10 +109,12 @@ static constexpr std::string_view yacc_stencil = R"__yacc(
 #include "ast.hpp"
 #include "tokens.hpp"
 #include "lexer.hpp"
+#include <fstream>
 
 extern int yyerror(const char * s);
 extern unsigned int column_number;
 Ast_Node* ast_root = nullptr;
+std::ofstream out_stream;
 %}
 
 %union {
@@ -121,24 +134,6 @@ int yyerror(const char * s) {
     printf("[Line: %d][Col: %u] Error: %s\n", yylineno, column_number, s);
     return 0;
 }
-
-int main(int argc, char** argv){
-    
-    if(argc < 3) {
-        printf("Usage: %s <input_file> <output_file>\n", argv[0]);
-        return 1;
-    }
-    
-    yyin=fopen(argv[1],"r");
-    yyparse();
-    printf("Parsing complete.\n\n");
-    ast_root->print();
-
-    FILE* stream = fopen(argv[2], "w");
-    ast_root->traverse();
-    return 0;
-}
-
 )__yacc";
 
 void
@@ -309,6 +304,9 @@ struct Ast_Node_Token : public Ast_Node {
 
 static constexpr std::string_view ast_file_stencil = R"__cpp(
 #include "ast.hpp"
+#include <fstream>
+
+extern std::ofstream out_stream;
 
 Ast_Node::~Ast_Node(){
     for (auto child : children) {
@@ -425,6 +423,14 @@ generate_ast(Language_Description ld, std::ofstream &header, std::ofstream &file
 }
 
 void
+generate_main(Language_Description ld, std::filesystem::path output_dir) {
+    if (ld.main.has_value()) {
+        std::ofstream file(output_dir / "src" / "main.cpp");
+        file << ld.main.value();
+    }
+}
+
+void
 generate_executable(std::filesystem::path output_dir) noexcept {
     MC_TRACE_FUNCTION("");
     std::filesystem::path original_path = std::filesystem::current_path();
@@ -469,6 +475,7 @@ generate(Language_Description ld, std::filesystem::path output_dir) noexcept {
         std::ofstream parser(output_dir / "src" / "parser.y");
         generate_lex_lexer_yacc_parser(ld, lexer, parser);
     }
+    { generate_main(ld, output_dir); }
 
     generate_executable(output_dir);
 }
