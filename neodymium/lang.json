@@ -37,7 +37,7 @@
         },
         {
             "name": "LITERAL_STRING",
-            "matcher": "\\\"[^\"]*\\\"",
+            "matcher": "\\\"([^\"\\\\]|\\\\.)*\\\"",
             "is_regex": true
         },
         {
@@ -123,7 +123,7 @@
                         "LITERAL_STRING",
                         "RPAREN"
                     ],
-                    "action": "        out_stream << \"        {\\n            \\\"name\\\":\" << dynamic_cast<Ast_Node_Token*>($2)->token.value << \",\\n            \\\"is_regex\\\": \\\"false\\\",\\n            \\\"value\\\": \" << dynamic_cast<Ast_Node_Token*>($3)->token.value << \"\\n        }\";\n"
+                    "action": "        out_stream << \"        {\\n            \\\"name\\\":\" << dynamic_cast<Ast_Node_Token*>($2)->token.value << \",\\n            \\\"is_regex\\\": false,\\n            \\\"matcher\\\": \" << dynamic_cast<Ast_Node_Token*>($3)->token.value << \"\\n        }\";\n"
                 },
                 {
                     "tag": "regex",
@@ -134,7 +134,7 @@
                         "LITERAL_STRING",
                         "RPAREN"
                     ],
-                    "action": "        out_stream << \"        {\\n            \\\"name\\\":\" << dynamic_cast<Ast_Node_Token*>($2)->token.value << \",\\n            \\\"is_regex\\\": \\\"true\\\",\\n            \\\"value\\\": \" << dynamic_cast<Ast_Node_Token*>($3)->token.value << \"\\n        }\";\n"
+                    "action": "        out_stream << \"        {\\n            \\\"name\\\":\" << dynamic_cast<Ast_Node_Token*>($2)->token.value << \",\\n            \\\"is_regex\\\": true,\\n            \\\"matcher\\\": \" << dynamic_cast<Ast_Node_Token*>($3)->token.value << \"\\n        }\";\n"
                 }
             ]
         },
