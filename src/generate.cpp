@@ -308,6 +308,29 @@ static constexpr std::string_view ast_file_stencil = R"__cpp(
 
 extern std::ofstream out_stream;
 
+static std::string escape_cpp_literal(const std::string& literal) {
+    std::string ret;
+
+    for(const char c : literal) {
+        switch(c) {
+            case '`': ret += "\""; break;
+            case '\n': ret += "\\n"; break;
+            case '\t': ret += "\\t"; break;
+            case '\r': ret += "\\r"; break;
+            case '\v': ret += "\\v"; break;
+            case '\b': ret += "\\b"; break;
+            case '\f': ret += "\\f"; break;
+            case '\a': ret += "\\a"; break;
+            case '\\': ret += "\\\\"; break;
+            case '\'': ret += "\\'"; break;
+            case '\"': ret += "\\\""; break;
+            default: ret += c; break;
+        }
+    }
+
+    return ret;
+}
+
 Ast_Node::~Ast_Node(){
     for (auto child : children) {
         delete child;
