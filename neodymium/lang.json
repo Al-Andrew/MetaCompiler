@@ -69,6 +69,11 @@
             "name": "KEYWORD_MAIN",
             "matcher": "main",
             "is_regex": false
+        },
+        {
+            "name": "KEYWORD_START",
+            "matcher": "start",
+            "is_regex": false
         }
     ],
     "rules": [
@@ -83,10 +88,26 @@
                         "LITERAL_STRING",
                         "tokens_def",
                         "rules_def",
+                        "start_def",
                         "main_def",
                         "RPAREN"
                     ],
-                    "action": "        out_stream << \"{\\n    \\\"meta\\\": {\\n        \\\"name\\\": \" << dynamic_cast<Ast_Node_Token*>($2)->token.value << \",\\n        \\\"bin\\\": \\\"compiler\\\",\\n        \\\"version\\\": \\\"0.1.0\\\"\\n    },\\n\";\n        $3->traverse();\n        $4->traverse();"
+                    "action": "        out_stream << \"{\\n    \\\"meta\\\": {\\n        \\\"name\\\": \" << dynamic_cast<Ast_Node_Token*>($2)->token.value << \",\\n        \\\"bin\\\": \\\"compiler\\\",\\n        \\\"version\\\": \\\"0.1.0\\\"\\n    },\\n\";\n        $3->traverse();\n        $4->traverse();\n        $5->traverse();\n        $6->traverse();\n        out_stream << \"}\\n\";\n"
+                }
+            ]
+        },
+        {
+            "name": "start_def",
+            "constructions": [
+                {
+                    "tag": "base",
+                    "symbols": [
+                        "LPAREN",
+                        "KEYWORD_START",
+                        "LITERAL_STRING",
+                        "RPAREN"
+                    ],
+                    "action": "        out_stream << \"    \\\"start_rule\\\": \" << dynamic_cast<Ast_Node_Token*>($2)->token.value << \",\\n\";\n"
                 }
             ]
         },
@@ -163,7 +184,7 @@
                         "LITERAL_CPP",
                         "RPAREN"
                     ],
-                    "action": "        out_stream << dynamic_cast<Ast_Node_Token*>($2)->token.value;\n"
+                    "action": "        out_stream << escape_cpp_literal(dynamic_cast<Ast_Node_Token*>($2)->token.value) << \"\\n\";\n"
                 }
             ]
         },
@@ -299,7 +320,7 @@
                         "rules_list",
                         "RPAREN"
                     ],
-                    "action": "        out_stream << \"    \\\"rules\\\": [\\n\";\n        $2->traverse();\n        out_stream << \"\\n    ]\\n\";\n"
+                    "action": "        out_stream << \"    \\\"rules\\\": [\\n\";\n        $2->traverse();\n        out_stream << \"\\n    ],\\n\";\n"
                 }
             ]
         },
@@ -314,7 +335,7 @@
                         "LITERAL_CPP",
                         "RPAREN"
                     ],
-                    "action": ""
+                    "action": "       out_stream << \"    \\\"main\\\": \" << escape_cpp_literal(dynamic_cast<Ast_Node_Token*>($2)->token.value) << \"\\n\";\n"
                 }
             ]
         }
