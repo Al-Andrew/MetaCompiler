@@ -1,0 +1,366 @@
+{
+    "meta": {
+        "name": "neodymium",
+    "bin": "out.bin",
+    "version": "0.1.0"
+   },
+    "tokens": [
+        {
+            "name":"LPAREN",
+            "is_regex": false,
+            "matcher": "("
+        },
+        {
+            "name":"RPAREN",
+            "is_regex": false,
+            "matcher": ")"
+        },
+        {
+            "name":"KEYWORD_LANG",
+            "is_regex": false,
+            "matcher": "lang"
+        },
+        {
+            "name":"KEYWORD_TOKENS",
+            "is_regex": false,
+            "matcher": "tokens"
+        },
+        {
+            "name":"KEYWORD_TEXT",
+            "is_regex": false,
+            "matcher": "text"
+        },
+        {
+            "name":"KEYWORD_REGEX",
+            "is_regex": false,
+            "matcher": "regex"
+        },
+        {
+            "name":"KEYWORD_RULES",
+            "is_regex": false,
+            "matcher": "rules"
+        },
+        {
+            "name":"KEYWORD_CONSTRUCTIONS",
+            "is_regex": false,
+            "matcher": "constructions"
+        },
+        {
+            "name":"KEYWORKD_SYMBOLS",
+            "is_regex": false,
+            "matcher": "symbols"
+        },
+        {
+            "name":"KEYWORD_ACTION",
+            "is_regex": false,
+            "matcher": "action"
+        },
+        {
+            "name":"KEYWORD_START",
+            "is_regex": false,
+            "matcher": "start"
+        },
+        {
+            "name":"KEYWORD_MAIN",
+            "is_regex": false,
+            "matcher": "main"
+        },
+        {
+            "name":"LITERAL_STRING",
+            "is_regex": true,
+            "matcher": "\\\"([^\"\\\\]|\\\\.)*\\\""
+        },
+        {
+            "name":"LITERAL_CPP",
+            "is_regex": true,
+            "matcher": "\\`[^\\`]*\\`"
+        }
+    ],
+    "rules": [
+    {
+        "name": "lang_def",
+        "constructions": [
+          {
+               "tag": "base",
+               "symbols": [
+"LPAREN",
+"KEYWORD_LANG",
+"LITERAL_STRING",
+"tokens_def",
+"rules_def",
+"start_def",
+"main_def",
+        "RPAREN"
+               ],
+    "action": "\n                out_stream << \"\\{\\n    \\\"meta\\\": {\\n        \\\"name\\\": \" << dynamic_cast<Ast_Node_Token*>($2)->token.value\n                    << \",\\n    \\\"bin\\\": \\\"out.bin\\\",\\n    \\\"version\\\": \\\"0.1.0\\\"\\n   },\\n\";\n                $3->traverse();\n                $4->traverse();\n                $5->traverse();\n                $6->traverse();\n                out_stream << \"\\n}\\n\";\n            "
+
+          }
+        ]
+    },
+    {
+        "name": "start_def",
+        "constructions": [
+          {
+               "tag": "base",
+               "symbols": [
+"LPAREN",
+"KEYWORD_START",
+"LITERAL_STRING",
+        "RPAREN"
+               ],
+    "action": "\n                out_stream << \"    \\\"start_rule\\\": \" << dynamic_cast<Ast_Node_Token*>($2)->token.value << \",\\n\";\n            "
+
+          }
+        ]
+    },
+    {
+        "name": "token",
+        "constructions": [
+          {
+               "tag": "text",
+               "symbols": [
+"LPAREN",
+"KEYWORD_TEXT",
+"LITERAL_STRING",
+"LITERAL_STRING",
+        "RPAREN"
+               ],
+    "action": "\n                out_stream << \"        {\\n            \\\"name\\\":\" << dynamic_cast<Ast_Node_Token*>($2)->token.value\n                 << \",\\n            \\\"is_regex\\\": false,\\n            \\\"matcher\\\": \"\n                 << dynamic_cast<Ast_Node_Token*>($3)->token.value << \"\\n        }\";\n            "
+
+          },
+          {
+               "tag": "regex",
+               "symbols": [
+"LPAREN",
+"KEYWORD_REGEX",
+"LITERAL_STRING",
+"LITERAL_STRING",
+        "RPAREN"
+               ],
+    "action": "\n                out_stream << \"        {\\n            \\\"name\\\":\" << dynamic_cast<Ast_Node_Token*>($2)->token.value\n                 << \",\\n            \\\"is_regex\\\": true,\\n            \\\"matcher\\\": \" \n                 << dynamic_cast<Ast_Node_Token*>($3)->token.value << \"\\n        }\";\n            "
+
+          }
+        ]
+    },
+    {
+        "name": "tokens_list",
+        "constructions": [
+          {
+               "tag": "base",
+               "symbols": [
+        "token"
+               ],
+    "action": "\n                $0->traverse();\n            "
+
+          },
+          {
+               "tag": "recursive",
+               "symbols": [
+"token",
+        "tokens_list"
+               ],
+    "action": "\n                $0->traverse();\n                if($1->children.size() > 0) \n                    out_stream << \",\\n\";\n                $1->traverse();\n            "
+
+          }
+        ]
+    },
+    {
+        "name": "tokens_def",
+        "constructions": [
+          {
+               "tag": "base",
+               "symbols": [
+"LPAREN",
+"KEYWORD_TOKENS",
+"tokens_list",
+        "RPAREN"
+               ],
+    "action": "\n                out_stream << \"    \\\"tokens\\\": [\\n\";\n                $2->traverse();\n                out_stream << \"\\n    ],\\n\";\n            "
+
+          }
+        ]
+    },
+    {
+        "name": "action_def",
+        "constructions": [
+          {
+               "tag": "base",
+               "symbols": [
+"LPAREN",
+"KEYWORD_ACTION",
+"LITERAL_CPP",
+        "RPAREN"
+               ],
+    "action": "\n                out_stream << \"    \\\"action\\\": \" << escape_cpp_literal(dynamic_cast<Ast_Node_Token*>($2)->token.value) << \"\\n\";\n            "
+
+          }
+        ]
+    },
+    {
+        "name": "symbols_list",
+        "constructions": [
+          {
+               "tag": "base",
+               "symbols": [
+        "LITERAL_STRING"
+               ],
+    "action": "\n                out_stream << \"        \" << dynamic_cast<Ast_Node_Token*>($0)->token.value;\n            "
+
+          },
+          {
+               "tag": "recursive",
+               "symbols": [
+"LITERAL_STRING",
+        "symbols_list"
+               ],
+    "action": "\n                out_stream << dynamic_cast<Ast_Node_Token*>($0)->token.value;\n                if($1->children.size() > 0)\n                    out_stream << \",\\n\";\n                $1->traverse();\n            "
+
+          }
+        ]
+    },
+    {
+        "name": "symbols_def",
+        "constructions": [
+          {
+               "tag": "base",
+               "symbols": [
+"LPAREN",
+"KEYWORKD_SYMBOLS",
+"symbols_list",
+        "RPAREN"
+               ],
+    "action": "\n                $2->traverse();\n            "
+
+          }
+        ]
+    },
+    {
+        "name": "construction",
+        "constructions": [
+          {
+               "tag": "base",
+               "symbols": [
+"LPAREN",
+"LITERAL_STRING",
+"symbols_def",
+"action_def",
+        "RPAREN"
+               ],
+    "action": "\n                out_stream << \"          {\\n\";\n                out_stream << \"               \\\"tag\\\": \" << dynamic_cast<Ast_Node_Token*>($1)->token.value << \",\\n\";\n                out_stream << \"               \\\"symbols\\\": [\\n\";\n                $2->traverse();\n                out_stream << \"\\n               ],\\n\";\n                $3->traverse();\n                out_stream << \"\\n          }\";\n            "
+
+          }
+        ]
+    },
+    {
+        "name": "constructions_list",
+        "constructions": [
+          {
+               "tag": "base",
+               "symbols": [
+        "construction"
+               ],
+    "action": "\n                $0->traverse();\n            "
+
+          },
+          {
+               "tag": "recursive",
+               "symbols": [
+"construction",
+        "constructions_list"
+               ],
+    "action": "\n                $0->traverse();\n                if($1->children.size() > 0)\n                    out_stream << \",\\n\";\n                $1->traverse();\n            "
+
+          }
+        ]
+    },
+    {
+        "name": "constructions_def",
+        "constructions": [
+          {
+               "tag": "base",
+               "symbols": [
+"LPAREN",
+"KEYWORD_CONSTRUCTIONS",
+"constructions_list",
+        "RPAREN"
+               ],
+    "action": "\n                $2->traverse();\n            "
+
+          }
+        ]
+    },
+    {
+        "name": "rule",
+        "constructions": [
+          {
+               "tag": "base",
+               "symbols": [
+"LPAREN",
+"LITERAL_STRING",
+"constructions_def",
+        "RPAREN"
+               ],
+    "action": "\n                out_stream << \"    {\\n\";\n                out_stream << \"        \\\"name\\\": \" << dynamic_cast<Ast_Node_Token*>($1)->token.value << \",\\n\";\n                out_stream << \"        \\\"constructions\\\": [\\n\";\n                $2->traverse();\n                out_stream << \"\\n        ]\\n\";\n                out_stream << \"    }\";\n            "
+
+          }
+        ]
+    },
+    {
+        "name": "rules_list",
+        "constructions": [
+          {
+               "tag": "base",
+               "symbols": [
+        "rule"
+               ],
+    "action": "\n                $0->traverse();\n            "
+
+          },
+          {
+               "tag": "recursive",
+               "symbols": [
+"rule",
+        "rules_list"
+               ],
+    "action": "\n                $0->traverse();\n                if($1->children.size() > 0)\n                    out_stream << \",\\n\";\n                $1->traverse();\n            "
+
+          }
+        ]
+    },
+    {
+        "name": "rules_def",
+        "constructions": [
+          {
+               "tag": "base",
+               "symbols": [
+"LPAREN",
+"KEYWORD_RULES",
+"rules_list",
+        "RPAREN"
+               ],
+    "action": "\n                out_stream << \"    \\\"rules\\\": [\\n\";\n                $2->traverse();\n                out_stream << \"\\n    ],\\n\";\n            "
+
+          }
+        ]
+    },
+    {
+        "name": "main_def",
+        "constructions": [
+          {
+               "tag": "base",
+               "symbols": [
+"LPAREN",
+"KEYWORD_MAIN",
+"LITERAL_CPP",
+        "RPAREN"
+               ],
+    "action": "\n                out_stream << \"    \\\"main\\\": \" << escape_cpp_literal(dynamic_cast<Ast_Node_Token*>($2)->token.value) << \"\\n\";\n            "
+
+          }
+        ]
+    }
+    ],
+    "start_rule": "lang_def",
+    "main": "\n\n#include <stdio.h>\n#include \"ast.hpp\"\n#include \"tokens.hpp\"\n#include \"lexer.hpp\"\n#include <fstream>\n\nextern Ast_Node* ast_root;\nextern void yyparse();\nextern std::ofstream out_stream;\n\nint main(int argc, char** argv){\n    if(argc < 3) { \n        printf(\"Usage: %s <input_file> <output_file>\", argv[0]);\n        return 1;\n    }\n    \n    yyin=fopen(argv[1],\"r\");\n    yyparse();\n    printf(\"Parsing complete.\\n\\n\");\n    \n    ast_root->print();\n    out_stream.open(argv[2]);\n    ast_root->traverse();\n    \n    return 0;\n}\n\n"
+
+}

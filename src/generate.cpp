@@ -131,7 +131,8 @@ std::ofstream out_stream;
 
 %%
 int yyerror(const char * s) {
-    printf("[Line: %d][Col: %u] Error: %s\n", yylineno, column_number, s);
+
+    printf("[Line: %d][Col: %u] Error: %s. Arround %s\n", yylineno, column_number, s, yytext);
     return 0;
 }
 )__yacc";
