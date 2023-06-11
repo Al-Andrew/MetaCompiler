@@ -31,6 +31,15 @@ main(int argc, char **argv) {
         input = new std::ifstream(options.input_file);
     } else {
         MC_INFO("Feeding input file through neodymium");
+
+        MC_CHECK_WARN(
+            std::filesystem::create_directory(options.output_dir),
+            "Failed to create output directory \"{}\". If it already exists it will be overriden.",
+            options.output_dir.string());
+        MC_CHECK_WARN(
+            std::filesystem::create_directory(options.output_dir / "build"),
+            "Failed to create output directory \"{}/src\". If it already exists it will be overriden.",
+            options.output_dir.string());
         yyin = fopen(options.input_file.string().c_str(), "r");
         yyparse();
         fclose(yyin);
