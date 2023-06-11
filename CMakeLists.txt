@@ -15,3 +15,4 @@ set(CXXOPTS_BUILD_TESTS OFF CACHE INTERNAL "")
 add_subdirectory(thirdparty/cxxopts)
 
 add_subdirectory(src)
+add_subdirectory(neodymium)

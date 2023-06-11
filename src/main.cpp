@@ -4,6 +4,17 @@
 #include "mc/logging.hpp"
 #include "mc/options.hpp"
 #include "mc/utils.hpp"
+//
+//
+#include "ast.hpp"
+#include "lexer.hpp"
+#include "parser.hpp"
+
+extern Ast_Node     *ast_root;
+extern std::ofstream out_stream;
+extern FILE         *yyin;
+extern int
+yyparse();
 
 int
 main(int argc, char **argv) {
@@ -15,7 +26,21 @@ main(int argc, char **argv) {
         "options: input_file: {}, output_dir: {}, log_level: {}", options.input_file.string(),
         options.output_dir.string(), mc::logging::log_level_to_string(options.log_level)->data());
 
-    auto ld = mc::Language_Description::new_from_json(options.input_file);
+    std::istream *input;
+    if (options.is_input_raw) {
+        input = new std::ifstream(options.input_file);
+    } else {
+        MC_INFO("Feeding input file through neodymium");
+        yyin = fopen(options.input_file.string().c_str(), "r");
+        yyparse();
+        fclose(yyin);
+        out_stream.open(options.output_dir / "build" / "language.json");
+        ast_root->traverse();
+        out_stream.close();
+        input = new std::ifstream(options.output_dir / "build" / "language.json");
+    }
+
+    auto ld = mc::Language_Description::new_from_json(*input);
     ld.validate_rules();
 
     mc::generate(ld, options.output_dir);
