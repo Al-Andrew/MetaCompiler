@@ -1,5 +1,6 @@
 #pragma once
 #include <filesystem>
+#include <istream>
 #include <optional>
 #include <string>
 #include <variant>
@@ -62,7 +63,7 @@ struct Language_Description {
     std::optional<std::string> main;
 
     [[nodiscard]] static Language_Description
-    new_from_json(std::filesystem::path path) noexcept;
+    new_from_json(std::istream &path) noexcept;
 
     void
     validate_rules() noexcept;

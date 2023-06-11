@@ -10,6 +10,7 @@ struct Cmd_Options {
     std::filesystem::path     input_file;
     std::filesystem::path     output_dir;
     spdlog::level::level_enum log_level;
+    bool                      is_input_raw;
 };
 
 Cmd_Options

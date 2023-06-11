@@ -29,6 +29,7 @@ parse_cmd_options(int argc, char **argv) {
         ("l,log", "Loging level", cxxopts::value<std::string>()->default_value("WARN"))  //
         ("i,input", "Input file path", cxxopts::value<std::string>())  //
         ("o,output", "Output dir path", cxxopts::value<std::string>()->default_value(".mc/"))  //
+        ("r,raw", "Input is raw json", cxxopts::value<bool>())  //
         ("h,help", "Print usage");
 
     cxxopts::ParseResult options;
@@ -40,6 +41,12 @@ parse_cmd_options(int argc, char **argv) {
     }
 
     Cmd_Options ret;
+    if (options.count("raw")) {
+        ret.is_input_raw = true;
+    } else {
+        ret.is_input_raw = false;
+    }
+
     TRY_OR_HELP(
         ret.log_level = mc::logging::string_to_log_level(options["l"].as<std::string>()).value(), "Invalid log level");
     TRY_OR_HELP(ret.input_file = options["i"].as<std::string>(), "Input file path is required");

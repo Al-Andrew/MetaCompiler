@@ -115,13 +115,13 @@ Construction::format_action() const noexcept {
 }
 
 [[nodiscard]] Language_Description
-Language_Description::new_from_json(std::filesystem::path path) noexcept {
+Language_Description::new_from_json(std::istream &istream) noexcept {
     MC_TRACE_FUNCTION("");
 
     Language_Description result;
     json                 json_file;
 
-    MC_TRY_OR_EXIT(json_file = json::parse(std::ifstream(path)));
+    MC_TRY_OR_EXIT(json_file = json::parse(istream));
 
     json meta;
     MC_TRY_OR_EXIT(meta = json_file["meta"]);

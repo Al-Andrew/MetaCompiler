@@ -40,8 +40,6 @@ set(LEXER_OUTPUT ${CMAKE_CURRENT_BINARY_DIR}/lexer.cpp)
 BISON_TARGET(Parser ${PARSER_INPUT} ${PARSER_OUTPUT} COMPILE_FLAGS "-d")
 FLEX_TARGET(Lexer ${LEXER_INPUT} ${LEXER_OUTPUT} COMPILE_FLAGS "--header=lexer.hpp")
 
-# Include the generated sources in the build
-include_directories(${CMAKE_CURRENT_BINARY_DIR} ${CMAKE_CURRENT_SOURCE_DIR})
 
 set(SOURCES
     ast.cpp
@@ -50,6 +48,9 @@ set(SOURCES
 )
 
 add_library(language STATIC ${SOURCES})
+# Include the generated sources in the build
+target_include_directories(language PUBLIC ${CMAKE_CURRENT_BINARY_DIR} ${CMAKE_CURRENT_SOURCE_DIR})
+
 
 /* @add_executable */
 
