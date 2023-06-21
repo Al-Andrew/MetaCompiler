@@ -1,0 +1,65 @@
+(lang "forthlike"
+
+(tokens
+    (regex "number" "[0-9]+")
+    (text "operator_plus" "+")
+    (text "operator_minus" "-")
+    (text "operator_multiply" "*")
+    (text "operator_divide" "/")
+    (text "keyword_print" "print")
+    (text "keyword_dup" "dup")
+)
+
+(rules
+    ("program" (constructions
+        ("base" (symbols "statement_list") (action `$0->traverse();`))
+    ))
+    ("statement" (constructions
+        ("number" (symbols "number") (action `push(stoi(dynamic_cast<Ast_Node_Token*>($0)->token.value));`))
+        ("plus" (symbols "operator_plus") (action `push(pop() + pop());`))
+        ("minus" (symbols "operator_minus") (action `push(pop() - pop());`))
+        ("multiply" (symbols "operator_multiply") (action `push(pop() * pop());`))
+        ("divide" (symbols "operator_divide") (action `push(pop() / pop());`))
+        ("dup" (symbols "keyword_dup") (action `push(stack[stack_pointer - 1]);`))
+        ("print" (symbols "keyword_print") (action `printf("%d\n", pop());`))
+    ))
+    ("statement_list" (constructions
+        ("base" (symbols "statement") (action `$0->traverse();`))
+        ("recursion" (symbols "statement" "statement_list") (action `$0->traverse(); $1->traverse();`))
+    ))
+)
+
+(start "program")
+(main `
+#include <stdio.h>
+#include "ast.hpp"
+#include "tokens.hpp"
+#include "lexer.hpp"
+#include <fstream>
+
+extern Ast_Node* ast_root;
+extern void yyparse();
+extern std::ofstream out_stream;
+
+int stack[1024];
+int stack_pointer = 0;
+
+void push(int value) {
+    stack[stack_pointer++] = value;
+}
+
+int pop() {
+    return stack[--stack_pointer];
+}
+
+int main(int argc, char** argv) {
+    yyin=fopen(argv[1],"r");
+    yyparse();
+    // ast_root->print();
+    ast_root->traverse();
+    return 0;
+}
+
+`)
+
+)

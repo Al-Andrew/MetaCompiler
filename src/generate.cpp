@@ -309,6 +309,10 @@ static constexpr std::string_view ast_file_stencil = R"__cpp(
 #include <fstream>
 
 extern std::ofstream out_stream;
+extern void push(int i);
+extern int pop();
+extern int stack[1024];
+extern int stack_pointer;
 
 static std::string escape_cpp_literal(const std::string& literal) {
     std::string ret;

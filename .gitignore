@@ -8,3 +8,7 @@ testing/tests/.outputs
 testing/__pycache__
 bin/
 .venv/
+
+node_modules/
+package-lock.json
+package.json

@@ -1,0 +1,12 @@
+3
+    5
+    7
+    +
+    dup
+    print
+/
+dup
+print
+3
+*
+print
