@@ -16,15 +16,15 @@
     (regex "LITERAL_CPP" "\\`[^\\`]*\\`")
 )
 (rules
-    ("lang_def" (constructions
-        ("base"
+    ("lang_def" (start) (constructions
+        ("base" 
             (symbols
                 "LPAREN"
                 "KEYWORD_LANG"
                 "LITERAL_STRING"
                 "tokens_def"
                 "rules_def"
-                "start_def"
+                // "start_def"
                 "main_def"
                 "RPAREN"
             )
@@ -33,22 +33,11 @@
                     << ",\n    \"bin\": \"out.bin\",\n    \"version\": \"0.1.0\"\n   },\n";
                 $3->traverse();
                 $4->traverse();
+                auto sr = user_data["start_rule"];
+                out_stream << "    \"start_rule\": " << sr << ",\n";
                 $5->traverse();
-                $6->traverse();
+                //$6->traverse();
                 out_stream << "\n}\n";
-            `)
-        )
-    ))
-    ("start_def" (constructions
-        ("base"
-            (symbols
-                "LPAREN"
-                "KEYWORD_START"
-                "LITERAL_STRING"
-                "RPAREN"
-            )
-            (action `
-                out_stream << "    \"start_rule\": " << dynamic_cast<Ast_Node_Token*>($2)->token.value << ",\n";
             `)
         )
     ))
@@ -239,6 +228,26 @@
                 out_stream << "    }";
             `)
         )
+        ("with_start"
+            (symbols
+                "LPAREN"
+                "LITERAL_STRING"
+                "LPAREN"
+                "KEYWORD_START"
+                "RPAREN"
+                "constructions_def"
+                "RPAREN"
+            )
+            (action `
+                user_data["start_rule"] = dynamic_cast<Ast_Node_Token*>($1)->token.value;
+                out_stream << "    {\n";
+                out_stream << "        \"name\": " << dynamic_cast<Ast_Node_Token*>($1)->token.value << ",\n";
+                out_stream << "        \"constructions\": [\n";
+                $5->traverse();
+                out_stream << "\n        ]\n";
+                out_stream << "    }";
+            `)
+        )
     ))
     ("rules_list" (constructions 
         ("base"
@@ -292,7 +301,6 @@
     ))
 )
 
-(start "lang_def")
 (main `
 
 #include <stdio.h>
@@ -300,6 +308,7 @@
 #include "tokens.hpp"
 #include "lexer.hpp"
 #include <fstream>
+#include <unordered_map>
 
 extern Ast_Node* ast_root;
 extern void yyparse();

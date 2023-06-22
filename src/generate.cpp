@@ -307,7 +307,9 @@ struct Ast_Node_Token : public Ast_Node {
 static constexpr std::string_view ast_file_stencil = R"__cpp(
 #include "ast.hpp"
 #include <fstream>
+#include <unordered_map>
 
+std::unordered_map<std::string, std::string> user_data;
 extern std::ofstream out_stream;
 extern void push(int i);
 extern int pop();
