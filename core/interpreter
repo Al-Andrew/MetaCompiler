@@ -1,0 +1,8 @@
+(component "interpreter"
+    (action "printnv" `
+        printf("%s\n", dynamic_cast<Ast_Node_Token*>($1)->token.value.c_str());
+    `)
+    (action "prints" `
+        printf("%s\n", $1);
+    `)
+)

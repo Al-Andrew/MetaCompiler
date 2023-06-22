@@ -45,16 +45,38 @@ struct Ast_Node_Token : public Ast_Node {
     virtual void traverse() override {}
 };
 
-struct Ast_Node_LANG_DEF : public Ast_Node {
-    Ast_Node_LANG_DEF(std::vector<Ast_Node*> children) : Ast_Node(children) {}
-    virtual ~Ast_Node_LANG_DEF();
+struct Ast_Node_FILE : public Ast_Node {
+    Ast_Node_FILE(std::vector<Ast_Node*> children) : Ast_Node(children) {}
+    virtual ~Ast_Node_FILE();
 };
-struct Ast_Node_Construction_LANG_DEF_BASE : public Ast_Node_LANG_DEF {
-    Ast_Node_Construction_LANG_DEF_BASE(std::vector<Ast_Node*> children) : Ast_Node_LANG_DEF(children) {}
+struct Ast_Node_Construction_FILE_LANG : public Ast_Node_FILE {
+    Ast_Node_Construction_FILE_LANG(std::vector<Ast_Node*> children) : Ast_Node_FILE(children) {}
 
-    virtual ~Ast_Node_Construction_LANG_DEF_BASE();
+    virtual ~Ast_Node_Construction_FILE_LANG();
 
-    static Ast_Node_Construction_LANG_DEF_BASE* make(Ast_Node* p0, Ast_Node* p1, Ast_Node* p2, Ast_Node* p3, Ast_Node* p4, Ast_Node* p5, Ast_Node* p6);
+    static Ast_Node_Construction_FILE_LANG* make(Ast_Node* p0, Ast_Node* p1, Ast_Node* p2, Ast_Node* p3, Ast_Node* p4, Ast_Node* p5, Ast_Node* p6);
+
+    virtual const char* get_name() override;
+    virtual void traverse() override;
+};
+
+struct Ast_Node_Construction_FILE_LANG_WITH_INCLUDES : public Ast_Node_FILE {
+    Ast_Node_Construction_FILE_LANG_WITH_INCLUDES(std::vector<Ast_Node*> children) : Ast_Node_FILE(children) {}
+
+    virtual ~Ast_Node_Construction_FILE_LANG_WITH_INCLUDES();
+
+    static Ast_Node_Construction_FILE_LANG_WITH_INCLUDES* make(Ast_Node* p0, Ast_Node* p1, Ast_Node* p2, Ast_Node* p3, Ast_Node* p4, Ast_Node* p5, Ast_Node* p6, Ast_Node* p7);
+
+    virtual const char* get_name() override;
+    virtual void traverse() override;
+};
+
+struct Ast_Node_Construction_FILE_COMPONENT : public Ast_Node_FILE {
+    Ast_Node_Construction_FILE_COMPONENT(std::vector<Ast_Node*> children) : Ast_Node_FILE(children) {}
+
+    virtual ~Ast_Node_Construction_FILE_COMPONENT();
+
+    static Ast_Node_Construction_FILE_COMPONENT* make(Ast_Node* p0, Ast_Node* p1, Ast_Node* p2, Ast_Node* p3, Ast_Node* p4);
 
     virtual const char* get_name() override;
     virtual void traverse() override;
@@ -125,6 +147,114 @@ struct Ast_Node_Construction_TOKENS_DEF_BASE : public Ast_Node_TOKENS_DEF {
     virtual ~Ast_Node_Construction_TOKENS_DEF_BASE();
 
     static Ast_Node_Construction_TOKENS_DEF_BASE* make(Ast_Node* p0, Ast_Node* p1, Ast_Node* p2, Ast_Node* p3);
+
+    virtual const char* get_name() override;
+    virtual void traverse() override;
+};
+
+
+struct Ast_Node_CA_PARAM : public Ast_Node {
+    Ast_Node_CA_PARAM(std::vector<Ast_Node*> children) : Ast_Node(children) {}
+    virtual ~Ast_Node_CA_PARAM();
+};
+struct Ast_Node_Construction_CA_PARAM_CA : public Ast_Node_CA_PARAM {
+    Ast_Node_Construction_CA_PARAM_CA(std::vector<Ast_Node*> children) : Ast_Node_CA_PARAM(children) {}
+
+    virtual ~Ast_Node_Construction_CA_PARAM_CA();
+
+    static Ast_Node_Construction_CA_PARAM_CA* make(Ast_Node* p0);
+
+    virtual const char* get_name() override;
+    virtual void traverse() override;
+};
+
+struct Ast_Node_Construction_CA_PARAM_CPP : public Ast_Node_CA_PARAM {
+    Ast_Node_Construction_CA_PARAM_CPP(std::vector<Ast_Node*> children) : Ast_Node_CA_PARAM(children) {}
+
+    virtual ~Ast_Node_Construction_CA_PARAM_CPP();
+
+    static Ast_Node_Construction_CA_PARAM_CPP* make(Ast_Node* p0);
+
+    virtual const char* get_name() override;
+    virtual void traverse() override;
+};
+
+
+struct Ast_Node_COMPONENT_ACTION_PARAM_LIST : public Ast_Node {
+    Ast_Node_COMPONENT_ACTION_PARAM_LIST(std::vector<Ast_Node*> children) : Ast_Node(children) {}
+    virtual ~Ast_Node_COMPONENT_ACTION_PARAM_LIST();
+};
+struct Ast_Node_Construction_COMPONENT_ACTION_PARAM_LIST_BASE_CA : public Ast_Node_COMPONENT_ACTION_PARAM_LIST {
+    Ast_Node_Construction_COMPONENT_ACTION_PARAM_LIST_BASE_CA(std::vector<Ast_Node*> children) : Ast_Node_COMPONENT_ACTION_PARAM_LIST(children) {}
+
+    virtual ~Ast_Node_Construction_COMPONENT_ACTION_PARAM_LIST_BASE_CA();
+
+    static Ast_Node_Construction_COMPONENT_ACTION_PARAM_LIST_BASE_CA* make(Ast_Node* p0);
+
+    virtual const char* get_name() override;
+    virtual void traverse() override;
+};
+
+struct Ast_Node_Construction_COMPONENT_ACTION_PARAM_LIST_RECURSIVE : public Ast_Node_COMPONENT_ACTION_PARAM_LIST {
+    Ast_Node_Construction_COMPONENT_ACTION_PARAM_LIST_RECURSIVE(std::vector<Ast_Node*> children) : Ast_Node_COMPONENT_ACTION_PARAM_LIST(children) {}
+
+    virtual ~Ast_Node_Construction_COMPONENT_ACTION_PARAM_LIST_RECURSIVE();
+
+    static Ast_Node_Construction_COMPONENT_ACTION_PARAM_LIST_RECURSIVE* make(Ast_Node* p0, Ast_Node* p1);
+
+    virtual const char* get_name() override;
+    virtual void traverse() override;
+};
+
+
+struct Ast_Node_ACTION_EXPAND : public Ast_Node {
+    Ast_Node_ACTION_EXPAND(std::vector<Ast_Node*> children) : Ast_Node(children) {}
+    virtual ~Ast_Node_ACTION_EXPAND();
+};
+struct Ast_Node_Construction_ACTION_EXPAND_CPP_LITERAL : public Ast_Node_ACTION_EXPAND {
+    Ast_Node_Construction_ACTION_EXPAND_CPP_LITERAL(std::vector<Ast_Node*> children) : Ast_Node_ACTION_EXPAND(children) {}
+
+    virtual ~Ast_Node_Construction_ACTION_EXPAND_CPP_LITERAL();
+
+    static Ast_Node_Construction_ACTION_EXPAND_CPP_LITERAL* make(Ast_Node* p0);
+
+    virtual const char* get_name() override;
+    virtual void traverse() override;
+};
+
+struct Ast_Node_Construction_ACTION_EXPAND_COMPONENT_ACTION : public Ast_Node_ACTION_EXPAND {
+    Ast_Node_Construction_ACTION_EXPAND_COMPONENT_ACTION(std::vector<Ast_Node*> children) : Ast_Node_ACTION_EXPAND(children) {}
+
+    virtual ~Ast_Node_Construction_ACTION_EXPAND_COMPONENT_ACTION();
+
+    static Ast_Node_Construction_ACTION_EXPAND_COMPONENT_ACTION* make(Ast_Node* p0, Ast_Node* p1, Ast_Node* p2, Ast_Node* p3);
+
+    virtual const char* get_name() override;
+    virtual void traverse() override;
+};
+
+
+struct Ast_Node_ACTION_EXPAND_LIST : public Ast_Node {
+    Ast_Node_ACTION_EXPAND_LIST(std::vector<Ast_Node*> children) : Ast_Node(children) {}
+    virtual ~Ast_Node_ACTION_EXPAND_LIST();
+};
+struct Ast_Node_Construction_ACTION_EXPAND_LIST_BASE : public Ast_Node_ACTION_EXPAND_LIST {
+    Ast_Node_Construction_ACTION_EXPAND_LIST_BASE(std::vector<Ast_Node*> children) : Ast_Node_ACTION_EXPAND_LIST(children) {}
+
+    virtual ~Ast_Node_Construction_ACTION_EXPAND_LIST_BASE();
+
+    static Ast_Node_Construction_ACTION_EXPAND_LIST_BASE* make(Ast_Node* p0);
+
+    virtual const char* get_name() override;
+    virtual void traverse() override;
+};
+
+struct Ast_Node_Construction_ACTION_EXPAND_LIST_RECURSIVE : public Ast_Node_ACTION_EXPAND_LIST {
+    Ast_Node_Construction_ACTION_EXPAND_LIST_RECURSIVE(std::vector<Ast_Node*> children) : Ast_Node_ACTION_EXPAND_LIST(children) {}
+
+    virtual ~Ast_Node_Construction_ACTION_EXPAND_LIST_RECURSIVE();
+
+    static Ast_Node_Construction_ACTION_EXPAND_LIST_RECURSIVE* make(Ast_Node* p0, Ast_Node* p1);
 
     virtual const char* get_name() override;
     virtual void traverse() override;
@@ -329,6 +459,92 @@ struct Ast_Node_Construction_MAIN_DEF_BASE : public Ast_Node_MAIN_DEF {
     virtual ~Ast_Node_Construction_MAIN_DEF_BASE();
 
     static Ast_Node_Construction_MAIN_DEF_BASE* make(Ast_Node* p0, Ast_Node* p1, Ast_Node* p2, Ast_Node* p3);
+
+    virtual const char* get_name() override;
+    virtual void traverse() override;
+};
+
+
+struct Ast_Node_COMPONENT_ACTION : public Ast_Node {
+    Ast_Node_COMPONENT_ACTION(std::vector<Ast_Node*> children) : Ast_Node(children) {}
+    virtual ~Ast_Node_COMPONENT_ACTION();
+};
+struct Ast_Node_Construction_COMPONENT_ACTION_BASE : public Ast_Node_COMPONENT_ACTION {
+    Ast_Node_Construction_COMPONENT_ACTION_BASE(std::vector<Ast_Node*> children) : Ast_Node_COMPONENT_ACTION(children) {}
+
+    virtual ~Ast_Node_Construction_COMPONENT_ACTION_BASE();
+
+    static Ast_Node_Construction_COMPONENT_ACTION_BASE* make(Ast_Node* p0, Ast_Node* p1, Ast_Node* p2, Ast_Node* p3, Ast_Node* p4);
+
+    virtual const char* get_name() override;
+    virtual void traverse() override;
+};
+
+
+struct Ast_Node_COMPONENT_ACTION_LIST : public Ast_Node {
+    Ast_Node_COMPONENT_ACTION_LIST(std::vector<Ast_Node*> children) : Ast_Node(children) {}
+    virtual ~Ast_Node_COMPONENT_ACTION_LIST();
+};
+struct Ast_Node_Construction_COMPONENT_ACTION_LIST_BASE : public Ast_Node_COMPONENT_ACTION_LIST {
+    Ast_Node_Construction_COMPONENT_ACTION_LIST_BASE(std::vector<Ast_Node*> children) : Ast_Node_COMPONENT_ACTION_LIST(children) {}
+
+    virtual ~Ast_Node_Construction_COMPONENT_ACTION_LIST_BASE();
+
+    static Ast_Node_Construction_COMPONENT_ACTION_LIST_BASE* make(Ast_Node* p0);
+
+    virtual const char* get_name() override;
+    virtual void traverse() override;
+};
+
+struct Ast_Node_Construction_COMPONENT_ACTION_LIST_RECURSIVE : public Ast_Node_COMPONENT_ACTION_LIST {
+    Ast_Node_Construction_COMPONENT_ACTION_LIST_RECURSIVE(std::vector<Ast_Node*> children) : Ast_Node_COMPONENT_ACTION_LIST(children) {}
+
+    virtual ~Ast_Node_Construction_COMPONENT_ACTION_LIST_RECURSIVE();
+
+    static Ast_Node_Construction_COMPONENT_ACTION_LIST_RECURSIVE* make(Ast_Node* p0, Ast_Node* p1);
+
+    virtual const char* get_name() override;
+    virtual void traverse() override;
+};
+
+
+struct Ast_Node_INCLUDE_LIST : public Ast_Node {
+    Ast_Node_INCLUDE_LIST(std::vector<Ast_Node*> children) : Ast_Node(children) {}
+    virtual ~Ast_Node_INCLUDE_LIST();
+};
+struct Ast_Node_Construction_INCLUDE_LIST_BASE : public Ast_Node_INCLUDE_LIST {
+    Ast_Node_Construction_INCLUDE_LIST_BASE(std::vector<Ast_Node*> children) : Ast_Node_INCLUDE_LIST(children) {}
+
+    virtual ~Ast_Node_Construction_INCLUDE_LIST_BASE();
+
+    static Ast_Node_Construction_INCLUDE_LIST_BASE* make(Ast_Node* p0, Ast_Node* p1, Ast_Node* p2, Ast_Node* p3);
+
+    virtual const char* get_name() override;
+    virtual void traverse() override;
+};
+
+
+struct Ast_Node_INCLUDE_PATHS_LIST : public Ast_Node {
+    Ast_Node_INCLUDE_PATHS_LIST(std::vector<Ast_Node*> children) : Ast_Node(children) {}
+    virtual ~Ast_Node_INCLUDE_PATHS_LIST();
+};
+struct Ast_Node_Construction_INCLUDE_PATHS_LIST_BASE : public Ast_Node_INCLUDE_PATHS_LIST {
+    Ast_Node_Construction_INCLUDE_PATHS_LIST_BASE(std::vector<Ast_Node*> children) : Ast_Node_INCLUDE_PATHS_LIST(children) {}
+
+    virtual ~Ast_Node_Construction_INCLUDE_PATHS_LIST_BASE();
+
+    static Ast_Node_Construction_INCLUDE_PATHS_LIST_BASE* make(Ast_Node* p0);
+
+    virtual const char* get_name() override;
+    virtual void traverse() override;
+};
+
+struct Ast_Node_Construction_INCLUDE_PATHS_LIST_RECURSIVE : public Ast_Node_INCLUDE_PATHS_LIST {
+    Ast_Node_Construction_INCLUDE_PATHS_LIST_RECURSIVE(std::vector<Ast_Node*> children) : Ast_Node_INCLUDE_PATHS_LIST(children) {}
+
+    virtual ~Ast_Node_Construction_INCLUDE_PATHS_LIST_RECURSIVE();
+
+    static Ast_Node_Construction_INCLUDE_PATHS_LIST_RECURSIVE* make(Ast_Node* p0, Ast_Node* p1);
 
     virtual const char* get_name() override;
     virtual void traverse() override;
