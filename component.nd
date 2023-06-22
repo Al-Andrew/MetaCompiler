@@ -1,5 +1,0 @@
-(component "test"
-    (action "test" `
-        
-    `)
-)
