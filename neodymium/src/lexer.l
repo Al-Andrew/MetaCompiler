@@ -23,8 +23,12 @@ unsigned int column_number = 1;
 "action" { column_number += yyleng; yylval.ast_node = Ast_Node_Token::make(Token{Token_Type::TKN_ID_KEYWORD_ACTION, yytext, (unsigned int)yylineno, column_number}); return TKN_ID_KEYWORD_ACTION; }
 "start" { column_number += yyleng; yylval.ast_node = Ast_Node_Token::make(Token{Token_Type::TKN_ID_KEYWORD_START, yytext, (unsigned int)yylineno, column_number}); return TKN_ID_KEYWORD_START; }
 "main" { column_number += yyleng; yylval.ast_node = Ast_Node_Token::make(Token{Token_Type::TKN_ID_KEYWORD_MAIN, yytext, (unsigned int)yylineno, column_number}); return TKN_ID_KEYWORD_MAIN; }
+"component" { column_number += yyleng; yylval.ast_node = Ast_Node_Token::make(Token{Token_Type::TKN_ID_KEYWORD_COMPONENT, yytext, (unsigned int)yylineno, column_number}); return TKN_ID_KEYWORD_COMPONENT; }
+"include" { column_number += yyleng; yylval.ast_node = Ast_Node_Token::make(Token{Token_Type::TKN_ID_KEYWORD_INCLUDE, yytext, (unsigned int)yylineno, column_number}); return TKN_ID_KEYWORD_INCLUDE; }
 \"([^"\\]|\\.)*\" { column_number += yyleng; yylval.ast_node = Ast_Node_Token::make(Token{Token_Type::TKN_ID_LITERAL_STRING, yytext, (unsigned int)yylineno, column_number}); return TKN_ID_LITERAL_STRING; }
 \`[^\`]*\` { column_number += yyleng; yylval.ast_node = Ast_Node_Token::make(Token{Token_Type::TKN_ID_LITERAL_CPP, yytext, (unsigned int)yylineno, column_number}); return TKN_ID_LITERAL_CPP; }
+[a-zA-Z0-9_]+.[a-zA-Z0-9_]+ { column_number += yyleng; yylval.ast_node = Ast_Node_Token::make(Token{Token_Type::TKN_ID_COMPONENT_ACTION, yytext, (unsigned int)yylineno, column_number}); return TKN_ID_COMPONENT_ACTION; }
+\$[0-9][1-9]* { column_number += yyleng; yylval.ast_node = Ast_Node_Token::make(Token{Token_Type::TKN_ID_COMPONENT_ACTION_PARAM, yytext, (unsigned int)yylineno, column_number}); return TKN_ID_COMPONENT_ACTION_PARAM; }
 
 
 [ \t] { column_number++; }

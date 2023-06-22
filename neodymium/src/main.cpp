@@ -10,6 +10,7 @@
 extern Ast_Node* ast_root;
 extern void yyparse();
 extern std::ofstream out_stream;
+extern std::vector<std::string> includes;
 
 int main(int argc, char** argv){
     if(argc < 3) { 
@@ -20,6 +21,7 @@ int main(int argc, char** argv){
     yyin=fopen(argv[1],"r");
     yyparse();
     printf("Parsing complete.\n\n");
+    fclose(yyin);
     
     ast_root->print();
     out_stream.open(argv[2]);

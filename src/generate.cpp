@@ -134,7 +134,9 @@ std::ofstream out_stream;
 int yyerror(const char * s) {
 
     printf("[Line: %d][Col: %u] Error: %s. Arround %s\n", yylineno, column_number, s, yytext);
-    return 0;
+    yylineno = 1;
+    column_number = 1;
+    return 1;
 }
 )__yacc";
 
@@ -308,20 +310,25 @@ static constexpr std::string_view ast_file_stencil = R"__cpp(
 #include "ast.hpp"
 #include <fstream>
 #include <unordered_map>
+#include <vector>
+#include <string>
 
 std::unordered_map<std::string, std::string> user_data;
+std::vector<std::string> includes;
 extern std::ofstream out_stream;
 extern void push(int i);
 extern int pop();
 extern int stack[1024];
 extern int stack_pointer;
+extern Ast_Node* ast_root;
+extern FILE* yyin;
+extern int yyparse();
 
 static std::string escape_cpp_literal(const std::string& literal) {
     std::string ret;
 
     for(const char c : literal) {
         switch(c) {
-            case '`': ret += "\""; break;
             case '\n': ret += "\\n"; break;
             case '\t': ret += "\\t"; break;
             case '\r': ret += "\\r"; break;
@@ -333,6 +340,38 @@ static std::string escape_cpp_literal(const std::string& literal) {
             case '\'': ret += "\\'"; break;
             case '\"': ret += "\\\""; break;
             default: ret += c; break;
+        }
+    }
+
+    return ret;
+}
+
+static std::string expand_component_action(const std::string& code, const std::string& paramList) {
+    // the paramList is of the form: p1,p2,p3,p4
+    // first we need to split it into a vector of strings
+    std::vector<std::string> params;
+    std::string current_param;
+    for(const char c : paramList) {
+        if(c == ',') {
+            params.push_back(current_param);
+            current_param = "";
+        } else {
+            current_param += c;
+        }
+    }
+    params.push_back(current_param);
+
+    // now we need to replace the $0, $1, $2 etc. with the params
+    std::string ret = code;
+    for(int i = 0; i < params.size(); i++) {
+        std::string param = params[i];
+        std::string replace = "$" + std::to_string(i);
+        if (param != replace) {
+            size_t pos = ret.find(replace);
+            while(pos != std::string::npos) {
+                ret.replace(pos, replace.length(), param);
+                pos = ret.find(replace);
+            }
         }
     }
 

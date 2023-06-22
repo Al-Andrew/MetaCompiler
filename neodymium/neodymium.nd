@@ -12,19 +12,22 @@
     (text "KEYWORD_ACTION" "action")
     (text "KEYWORD_START" "start")
     (text "KEYWORD_MAIN" "main")
+    (text "KEYWORD_COMPONENT" "component")
+    (text "KEYWORD_INCLUDE" "include")
     (regex "LITERAL_STRING" "\\\"([^\"\\\\]|\\\\.)*\\\"")
     (regex "LITERAL_CPP" "\\`[^\\`]*\\`")
+    (regex "COMPONENT_ACTION" "[a-zA-Z0-9_]+.[a-zA-Z0-9_]+")
+    (regex "COMPONENT_ACTION_PARAM" "\\$[0-9][1-9]*")
 )
 (rules
-    ("lang_def" (start) (constructions
-        ("base" 
+    ("file" (start) (constructions
+        ("lang" 
             (symbols
                 "LPAREN"
                 "KEYWORD_LANG"
                 "LITERAL_STRING"
                 "tokens_def"
                 "rules_def"
-                // "start_def"
                 "main_def"
                 "RPAREN"
             )
@@ -36,8 +39,46 @@
                 auto sr = user_data["start_rule"];
                 out_stream << "    \"start_rule\": " << sr << ",\n";
                 $5->traverse();
-                //$6->traverse();
                 out_stream << "\n}\n";
+            `)
+        )
+        ("lang_with_includes"
+            (symbols
+                "LPAREN"
+                "KEYWORD_LANG"
+                "LITERAL_STRING"
+                "include_list"
+                "tokens_def"
+                "rules_def"
+                "main_def"
+                "RPAREN"
+            )
+            (action `
+                $3->traverse();
+                printf("done traversing includes\n");
+                out_stream << "\{\n    \"meta\": {\n        \"name\": " << dynamic_cast<Ast_Node_Token*>($2)->token.value
+                    << ",\n    \"bin\": \"out.bin\",\n    \"version\": \"0.1.0\"\n   },\n";
+                $4->traverse();
+                $5->traverse();
+                auto sr = user_data["start_rule"];
+                out_stream << "    \"start_rule\": " << sr << ",\n";
+                $6->traverse();
+                out_stream << "\n}\n";
+            `)
+        )
+        ("component"
+            (symbols
+                "LPAREN"
+                "KEYWORD_COMPONENT"
+                "LITERAL_STRING"
+                "component_action_list"
+                "RPAREN"
+            )
+            (action `
+                std::string name = dynamic_cast<Ast_Node_Token*>($2)->token.value;
+                name = name.substr(1, name.size() - 2);
+                user_data["current_component"] = name;
+                $3->traverse();
             `)
         )
     ))
@@ -108,16 +149,108 @@
             `)
         )
     ))
+    ("ca_param" (constructions
+        ("ca"
+            (symbols 
+                "COMPONENT_ACTION"
+            )
+            (action `
+                user_data["last_component_action_param_list"] += dynamic_cast<Ast_Node_Token*>($0)->token.value;
+            `)
+        )
+        ("cpp"
+            (symbols
+                "LITERAL_CPP"
+            )
+            (action `
+                std::string code = dynamic_cast<Ast_Node_Token*>($0)->token.value;
+                code = code.substr(1, code.size() - 2);
+                user_data["last_component_action_param_list"] += code;
+            `)
+        )
+    ))
+    ("component_action_param_list" (constructions
+        ("base_ca"
+            (symbols
+                "ca_param"
+            )
+            (action `
+                $0->traverse();
+            `)
+        )
+        ("recursive"
+            (symbols
+                "ca_param"
+                "component_action_param_list"
+            )
+            (action `
+                $0->traverse();
+                if($1->children.size() > 0) 
+                    user_data["last_component_action_param_list"] += ",";
+                $1->traverse();
+            `)
+        )
+    ))
+    ("action_expand" (constructions
+        ("cpp_literal"
+            (symbols
+                "LITERAL_CPP"
+            )
+            (action `
+                std::string code = dynamic_cast<Ast_Node_Token*>($0)->token.value;
+                code = code.substr(1, code.size() - 2);
+                out_stream << escape_cpp_literal(code);
+            `)
+        )
+        ("component_action"
+            (symbols
+                "LPAREN"
+                "COMPONENT_ACTION"
+                "component_action_param_list"
+                "RPAREN"
+            )
+            (action `
+                $2->traverse();
+                std::string action_name = dynamic_cast<Ast_Node_Token*>($1)->token.value;
+                std::string action_code = user_data[action_name];
+                std::string param_list = user_data["last_component_action_param_list"];
+                std::string expanded_action = expand_component_action(action_code, param_list);
+                out_stream << escape_cpp_literal(expanded_action);
+            `)
+        )
+    ))
+    ("action_expand_list" (constructions
+        ("base"
+            (symbols
+                "action_expand"
+            )
+            (action `
+                $0->traverse();
+            `)
+        )
+        ("recursive"
+            (symbols
+                "action_expand"
+                "action_expand_list"
+            )
+            (action `
+                $0->traverse();
+                $1->traverse();
+            `)
+        )
+    ))
     ("action_def" (constructions
         ("base"
             (symbols
                 "LPAREN"
                 "KEYWORD_ACTION"
-                "LITERAL_CPP"
+                "action_expand_list"
                 "RPAREN"
             )
             (action `
-                out_stream << "    \"action\": " << escape_cpp_literal(dynamic_cast<Ast_Node_Token*>($2)->token.value) << "\n";
+                out_stream << "    \"action\": \"";
+                $2->traverse();
+                out_stream << "\"\n";
             `)
         )
     ))
@@ -295,7 +428,111 @@
                 "RPAREN"
             )
             (action `
-                out_stream << "    \"main\": " << escape_cpp_literal(dynamic_cast<Ast_Node_Token*>($2)->token.value) << "\n";
+                std::string code = dynamic_cast<Ast_Node_Token*>($2)->token.value;
+                code = code.substr(1, code.size() - 2);
+                out_stream << "    \"main\": \"" << escape_cpp_literal(code) << "\"\n";
+            `)
+        )
+    ))
+    ("component_action" (constructions
+        ("base"
+            (symbols
+                "LPAREN"
+                "KEYWORD_ACTION"
+                "LITERAL_STRING"
+                "LITERAL_CPP"
+                "RPAREN"
+            )
+            (action `
+                std::string action_name = dynamic_cast<Ast_Node_Token*>($2)->token.value;
+                action_name = action_name.substr(1, action_name.size() - 2);
+                std::string action_code = dynamic_cast<Ast_Node_Token*>($3)->token.value;
+                action_code = action_code.substr(1, action_code.size() - 2);
+                std::string action_full_name = user_data["current_component"] + "." + action_name;
+                printf("action: %s\n", action_full_name.c_str());
+                user_data[action_full_name] = action_code;
+            `)
+        )
+    ))
+    ("component_action_list" (constructions
+        ("base"
+            (symbols
+                "component_action"
+            )
+            (action `
+                $0->traverse();
+            `)
+        )
+        ("recursive"
+            (symbols
+                "component_action"
+                "component_action_list"
+            )
+            (action `
+                $0->traverse();
+                $1->traverse();
+            `)
+        )
+    ))
+    ("include_list" (constructions
+        ("base"
+            (symbols
+                "LPAREN"
+                "KEYWORD_INCLUDE"
+                "include_paths_list"
+                "RPAREN"
+            )
+            (action `
+                $2->traverse();
+            `)
+        )
+    ))
+    ("include_paths_list" (constructions
+        ("base"
+            (symbols
+                "LITERAL_STRING"
+            )
+            (action `
+                std::string include = dynamic_cast<Ast_Node_Token*>($0)->token.value;
+                include = include.substr(1, include.size() - 2);
+                Ast_Node* current_root = ast_root;
+                Ast_Node* include_root = nullptr;
+                printf("Including %s\n", include.c_str());
+                yyin=fopen(include.c_str(),"r");
+                int result = yyparse();
+                fclose(yyin);
+                if(result != 0)
+                    return;
+                include_root = ast_root;
+                ast_root = current_root;
+                include_root->print();
+                printf("Traversing\n");
+                include_root->traverse();
+                printf("Done traversing\n");
+            `)
+        )
+        ("recursive"
+            (symbols
+                "LITERAL_STRING"
+                "include_paths_list"
+            )
+            (action `
+                std::string include = dynamic_cast<Ast_Node_Token*>($0)->token.value;
+                include = include.substr(1, include.size() - 2);
+                Ast_Node* current_root = ast_root;
+                Ast_Node* include_root = nullptr;
+                printf("Including %s\n", include.c_str());
+                yyin=fopen(include.c_str(),"r");
+                int result = yyparse();
+                fclose(yyin);
+                if(result != 0)
+                    return;
+                include_root = ast_root;
+                ast_root = current_root;
+                include_root->print();
+                printf("Traversing\n");
+                include_root->traverse();
+                $1->traverse();
             `)
         )
     ))
@@ -313,6 +550,7 @@
 extern Ast_Node* ast_root;
 extern void yyparse();
 extern std::ofstream out_stream;
+extern std::vector<std::string> includes;
 
 int main(int argc, char** argv){
     if(argc < 3) { 
@@ -323,6 +561,7 @@ int main(int argc, char** argv){
     yyin=fopen(argv[1],"r");
     yyparse();
     printf("Parsing complete.\n\n");
+    fclose(yyin);
     
     ast_root->print();
     out_stream.open(argv[2]);

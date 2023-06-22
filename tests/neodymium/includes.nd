@@ -1,0 +1,32 @@
+(lang "includes"
+    (include "core/interpreter")
+    (tokens 
+        (text "keyword_greet" "greet")
+        (regex "name" "[a-zA-Z]+")
+    )
+    (rules
+        ("greeting" (start) (constructions
+            ("named" (symbols "keyword_greet" "name") (action 
+                (interpreter.prints "Hello, ") 
+                (interpreter.printv $1)
+            ))
+        ))
+    )
+    (main `
+
+#include <stdio.h>
+#include "ast.hpp"
+
+extern FILE* yyin;
+extern Ast_Node* ast_root;
+extern void yyparse();
+
+int main(int argc, char** argv) {
+    yyin=fopen(argv[1],"r");
+    yyparse();
+    ast_root->traverse();
+    return 0;
+}
+
+    `)
+)
