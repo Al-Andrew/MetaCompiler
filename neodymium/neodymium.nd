@@ -152,9 +152,11 @@
     ("ca_param" (constructions
         ("ca"
             (symbols 
-                "COMPONENT_ACTION"
+                "COMPONENT_ACTION_PARAM"
             )
             (action `
+                std::string param = dynamic_cast<Ast_Node_Token*>($0)->token.value;
+                printf("ca param ca: %s\n", param.c_str());
                 user_data["last_component_action_param_list"] += dynamic_cast<Ast_Node_Token*>($0)->token.value;
             `)
         )
@@ -164,7 +166,6 @@
             )
             (action `
                 std::string code = dynamic_cast<Ast_Node_Token*>($0)->token.value;
-                code = code.substr(1, code.size() - 2);
                 user_data["last_component_action_param_list"] += code;
             `)
         )
@@ -202,7 +203,7 @@
                 out_stream << escape_cpp_literal(code);
             `)
         )
-        ("component_action"
+        ("component_action_w_params"
             (symbols
                 "LPAREN"
                 "COMPONENT_ACTION"
@@ -210,7 +211,23 @@
                 "RPAREN"
             )
             (action `
+                user_data["last_component_action_param_list"] = "";
                 $2->traverse();
+                std::string action_name = dynamic_cast<Ast_Node_Token*>($1)->token.value;
+                std::string action_code = user_data[action_name];
+                std::string param_list = user_data["last_component_action_param_list"];
+                std::string expanded_action = expand_component_action(action_code, param_list);
+                out_stream << escape_cpp_literal(expanded_action);
+            `)
+        )
+        ("component_action_wo_params"
+            (symbols
+                "LPAREN"
+                "COMPONENT_ACTION"
+                "RPAREN"
+            )
+            (action `
+                user_data["last_component_action_param_list"] = "";
                 std::string action_name = dynamic_cast<Ast_Node_Token*>($1)->token.value;
                 std::string action_code = user_data[action_name];
                 std::string param_list = user_data["last_component_action_param_list"];
@@ -424,13 +441,13 @@
             (symbols
                 "LPAREN"
                 "KEYWORD_MAIN"
-                "LITERAL_CPP"
+                "action_expand_list"
                 "RPAREN"
             )
             (action `
-                std::string code = dynamic_cast<Ast_Node_Token*>($2)->token.value;
-                code = code.substr(1, code.size() - 2);
-                out_stream << "    \"main\": \"" << escape_cpp_literal(code) << "\"\n";
+                out_stream << "    \"main\": \"";
+                $2->traverse();
+                out_stream << "\"\n";
             `)
         )
     ))
@@ -562,8 +579,8 @@ int main(int argc, char** argv){
     yyparse();
     printf("Parsing complete.\n\n");
     fclose(yyin);
-    
     ast_root->print();
+    
     out_stream.open(argv[2]);
     ast_root->traverse();
     

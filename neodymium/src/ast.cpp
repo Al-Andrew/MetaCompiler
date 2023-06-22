@@ -38,32 +38,80 @@ static std::string escape_cpp_literal(const std::string& literal) {
     return ret;
 }
 
+#include <algorithm>
+
+std::vector<std::string> split_params(const std::string& str) {
+    std::vector<std::string> constructs;
+    std::string buffer;
+
+    bool inBackticks = false;
+
+    for (char ch : str) {
+        if (ch == '`') {
+            inBackticks = !inBackticks;
+        }
+        if (ch == ',' && !inBackticks) {
+            // Remove leading/trailing spaces
+            buffer.erase(buffer.begin(),
+                         std::find_if(buffer.begin(), buffer.end(), [](int ch) {
+                             return !std::isspace(ch);
+                         }));
+            buffer.erase(std::find_if(buffer.rbegin(), buffer.rend(),
+                                      [](int ch) { return !std::isspace(ch); })
+                             .base(),
+                         buffer.end());
+            buffer = buffer.substr(1, buffer.size() - 2);
+            constructs.push_back(buffer);
+            buffer.clear();
+        } else {
+            buffer += ch;
+        }
+    }
+    // Push the last construct
+    // Remove leading/trailing spaces
+    buffer.erase(buffer.begin(),
+                 std::find_if(buffer.begin(), buffer.end(),
+                              [](int ch) { return !std::isspace(ch); }));
+    buffer.erase(std::find_if(buffer.rbegin(), buffer.rend(),
+                              [](int ch) { return !std::isspace(ch); })
+                     .base(),
+                 buffer.end());
+    if(buffer[0] == '`') {
+        buffer = buffer.substr(1, buffer.size() - 2);
+    }
+    printf("is_last_construct: %s\n", buffer.c_str());
+    constructs.push_back(buffer);
+
+    return constructs;
+}
+
 static std::string expand_component_action(const std::string& code, const std::string& paramList) {
     // the paramList is of the form: p1,p2,p3,p4
     // first we need to split it into a vector of strings
-    std::vector<std::string> params;
-    std::string current_param;
-    for(const char c : paramList) {
-        if(c == ',') {
-            params.push_back(current_param);
-            current_param = "";
-        } else {
-            current_param += c;
-        }
-    }
-    params.push_back(current_param);
+    printf("before split paramList: %s\n", paramList.c_str());
+    std::vector<std::string> params = split_params(paramList);
+    
 
     // now we need to replace the $0, $1, $2 etc. with the params
-    std::string ret = code;
-    for(int i = 0; i < params.size(); i++) {
-        std::string param = params[i];
-        std::string replace = "$" + std::to_string(i);
-        if (param != replace) {
-            size_t pos = ret.find(replace);
-            while(pos != std::string::npos) {
-                ret.replace(pos, replace.length(), param);
-                pos = ret.find(replace);
+    std::string ret = "";
+    
+    for(int idx = 0; idx < code.size() ; ++idx) {
+        if(code[idx] == '$') {
+            if(code[idx + 1] == '$') {
+                ret += '$';
+                ++idx;
+            } else {
+                std::string param_idx_str = "";
+                while(idx + 1 < code.size() && code[idx + 1] >= '0' && code[idx + 1] <= '9') {
+                    param_idx_str += code[idx + 1];
+                    ++idx;
+                }
+                int param_idx = std::stoi(param_idx_str);
+                ret += params[param_idx];
+                printf("replaced param %d with %s\n", param_idx, params[param_idx].c_str());
             }
+        } else {
+            ret += code[idx];
         }
     }
 
@@ -223,6 +271,8 @@ Ast_Node_Construction_CA_PARAM_CA::~Ast_Node_Construction_CA_PARAM_CA() {}
     }
     void Ast_Node_Construction_CA_PARAM_CA::traverse() {
 
+                std::string param = dynamic_cast<Ast_Node_Token*>(children[0])->token.value;
+                printf("ca param ca: %s\n", param.c_str());
                 user_data["last_component_action_param_list"] += dynamic_cast<Ast_Node_Token*>(children[0])->token.value;
             
     }
@@ -237,7 +287,6 @@ Ast_Node_Construction_CA_PARAM_CPP::~Ast_Node_Construction_CA_PARAM_CPP() {}
     void Ast_Node_Construction_CA_PARAM_CPP::traverse() {
 
                 std::string code = dynamic_cast<Ast_Node_Token*>(children[0])->token.value;
-                code = code.substr(1, code.size() - 2);
                 user_data["last_component_action_param_list"] += code;
             
     }
@@ -287,17 +336,36 @@ Ast_Node_Construction_ACTION_EXPAND_CPP_LITERAL::~Ast_Node_Construction_ACTION_E
                 out_stream << escape_cpp_literal(code);
             
     }
-Ast_Node_Construction_ACTION_EXPAND_COMPONENT_ACTION::~Ast_Node_Construction_ACTION_EXPAND_COMPONENT_ACTION() {}
+Ast_Node_Construction_ACTION_EXPAND_COMPONENT_ACTION_W_PARAMS::~Ast_Node_Construction_ACTION_EXPAND_COMPONENT_ACTION_W_PARAMS() {}
 
-    Ast_Node_Construction_ACTION_EXPAND_COMPONENT_ACTION* Ast_Node_Construction_ACTION_EXPAND_COMPONENT_ACTION::make(Ast_Node* p0, Ast_Node* p1, Ast_Node* p2, Ast_Node* p3) {
-        return new Ast_Node_Construction_ACTION_EXPAND_COMPONENT_ACTION{std::vector<Ast_Node*>{p0, p1, p2, p3}};
+    Ast_Node_Construction_ACTION_EXPAND_COMPONENT_ACTION_W_PARAMS* Ast_Node_Construction_ACTION_EXPAND_COMPONENT_ACTION_W_PARAMS::make(Ast_Node* p0, Ast_Node* p1, Ast_Node* p2, Ast_Node* p3) {
+        return new Ast_Node_Construction_ACTION_EXPAND_COMPONENT_ACTION_W_PARAMS{std::vector<Ast_Node*>{p0, p1, p2, p3}};
     }
-    const char* Ast_Node_Construction_ACTION_EXPAND_COMPONENT_ACTION::get_name() {
-        return "Ast_Node_Construction_ACTION_EXPAND_COMPONENT_ACTION";
+    const char* Ast_Node_Construction_ACTION_EXPAND_COMPONENT_ACTION_W_PARAMS::get_name() {
+        return "Ast_Node_Construction_ACTION_EXPAND_COMPONENT_ACTION_W_PARAMS";
     }
-    void Ast_Node_Construction_ACTION_EXPAND_COMPONENT_ACTION::traverse() {
+    void Ast_Node_Construction_ACTION_EXPAND_COMPONENT_ACTION_W_PARAMS::traverse() {
 
+                user_data["last_component_action_param_list"] = "";
                 children[2]->traverse();
+                std::string action_name = dynamic_cast<Ast_Node_Token*>(children[1])->token.value;
+                std::string action_code = user_data[action_name];
+                std::string param_list = user_data["last_component_action_param_list"];
+                std::string expanded_action = expand_component_action(action_code, param_list);
+                out_stream << escape_cpp_literal(expanded_action);
+            
+    }
+Ast_Node_Construction_ACTION_EXPAND_COMPONENT_ACTION_WO_PARAMS::~Ast_Node_Construction_ACTION_EXPAND_COMPONENT_ACTION_WO_PARAMS() {}
+
+    Ast_Node_Construction_ACTION_EXPAND_COMPONENT_ACTION_WO_PARAMS* Ast_Node_Construction_ACTION_EXPAND_COMPONENT_ACTION_WO_PARAMS::make(Ast_Node* p0, Ast_Node* p1, Ast_Node* p2) {
+        return new Ast_Node_Construction_ACTION_EXPAND_COMPONENT_ACTION_WO_PARAMS{std::vector<Ast_Node*>{p0, p1, p2}};
+    }
+    const char* Ast_Node_Construction_ACTION_EXPAND_COMPONENT_ACTION_WO_PARAMS::get_name() {
+        return "Ast_Node_Construction_ACTION_EXPAND_COMPONENT_ACTION_WO_PARAMS";
+    }
+    void Ast_Node_Construction_ACTION_EXPAND_COMPONENT_ACTION_WO_PARAMS::traverse() {
+
+                user_data["last_component_action_param_list"] = "";
                 std::string action_name = dynamic_cast<Ast_Node_Token*>(children[1])->token.value;
                 std::string action_code = user_data[action_name];
                 std::string param_list = user_data["last_component_action_param_list"];
@@ -552,9 +620,9 @@ Ast_Node_Construction_MAIN_DEF_BASE::~Ast_Node_Construction_MAIN_DEF_BASE() {}
     }
     void Ast_Node_Construction_MAIN_DEF_BASE::traverse() {
 
-                std::string code = dynamic_cast<Ast_Node_Token*>(children[2])->token.value;
-                code = code.substr(1, code.size() - 2);
-                out_stream << "    \"main\": \"" << escape_cpp_literal(code) << "\"\n";
+                out_stream << "    \"main\": \"";
+                children[2]->traverse();
+                out_stream << "\"\n";
             
     }
 Ast_Node_COMPONENT_ACTION::~Ast_Node_COMPONENT_ACTION() {}

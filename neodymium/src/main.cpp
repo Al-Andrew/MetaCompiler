@@ -22,8 +22,8 @@ int main(int argc, char** argv){
     yyparse();
     printf("Parsing complete.\n\n");
     fclose(yyin);
-    
     ast_root->print();
+    
     out_stream.open(argv[2]);
     ast_root->traverse();
     
