@@ -54,23 +54,7 @@ struct Ast_Node_Construction_LANG_DEF_BASE : public Ast_Node_LANG_DEF {
 
     virtual ~Ast_Node_Construction_LANG_DEF_BASE();
 
-    static Ast_Node_Construction_LANG_DEF_BASE* make(Ast_Node* p0, Ast_Node* p1, Ast_Node* p2, Ast_Node* p3, Ast_Node* p4, Ast_Node* p5, Ast_Node* p6, Ast_Node* p7);
-
-    virtual const char* get_name() override;
-    virtual void traverse() override;
-};
-
-
-struct Ast_Node_START_DEF : public Ast_Node {
-    Ast_Node_START_DEF(std::vector<Ast_Node*> children) : Ast_Node(children) {}
-    virtual ~Ast_Node_START_DEF();
-};
-struct Ast_Node_Construction_START_DEF_BASE : public Ast_Node_START_DEF {
-    Ast_Node_Construction_START_DEF_BASE(std::vector<Ast_Node*> children) : Ast_Node_START_DEF(children) {}
-
-    virtual ~Ast_Node_Construction_START_DEF_BASE();
-
-    static Ast_Node_Construction_START_DEF_BASE* make(Ast_Node* p0, Ast_Node* p1, Ast_Node* p2, Ast_Node* p3);
+    static Ast_Node_Construction_LANG_DEF_BASE* make(Ast_Node* p0, Ast_Node* p1, Ast_Node* p2, Ast_Node* p3, Ast_Node* p4, Ast_Node* p5, Ast_Node* p6);
 
     virtual const char* get_name() override;
     virtual void traverse() override;
@@ -275,6 +259,17 @@ struct Ast_Node_Construction_RULE_BASE : public Ast_Node_RULE {
     virtual ~Ast_Node_Construction_RULE_BASE();
 
     static Ast_Node_Construction_RULE_BASE* make(Ast_Node* p0, Ast_Node* p1, Ast_Node* p2, Ast_Node* p3);
+
+    virtual const char* get_name() override;
+    virtual void traverse() override;
+};
+
+struct Ast_Node_Construction_RULE_WITH_START : public Ast_Node_RULE {
+    Ast_Node_Construction_RULE_WITH_START(std::vector<Ast_Node*> children) : Ast_Node_RULE(children) {}
+
+    virtual ~Ast_Node_Construction_RULE_WITH_START();
+
+    static Ast_Node_Construction_RULE_WITH_START* make(Ast_Node* p0, Ast_Node* p1, Ast_Node* p2, Ast_Node* p3, Ast_Node* p4, Ast_Node* p5, Ast_Node* p6);
 
     virtual const char* get_name() override;
     virtual void traverse() override;

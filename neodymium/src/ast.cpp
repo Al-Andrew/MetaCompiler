@@ -1,8 +1,14 @@
 
 #include "ast.hpp"
 #include <fstream>
+#include <unordered_map>
 
+std::unordered_map<std::string, std::string> user_data;
 extern std::ofstream out_stream;
+extern void push(int i);
+extern int pop();
+extern int stack[1024];
+extern int stack_pointer;
 
 static std::string escape_cpp_literal(const std::string& literal) {
     std::string ret;
@@ -36,8 +42,8 @@ Ast_Node::~Ast_Node(){
 Ast_Node_LANG_DEF::~Ast_Node_LANG_DEF() {}
 Ast_Node_Construction_LANG_DEF_BASE::~Ast_Node_Construction_LANG_DEF_BASE() {}
 
-    Ast_Node_Construction_LANG_DEF_BASE* Ast_Node_Construction_LANG_DEF_BASE::make(Ast_Node* p0, Ast_Node* p1, Ast_Node* p2, Ast_Node* p3, Ast_Node* p4, Ast_Node* p5, Ast_Node* p6, Ast_Node* p7) {
-        return new Ast_Node_Construction_LANG_DEF_BASE{std::vector<Ast_Node*>{p0, p1, p2, p3, p4, p5, p6, p7}};
+    Ast_Node_Construction_LANG_DEF_BASE* Ast_Node_Construction_LANG_DEF_BASE::make(Ast_Node* p0, Ast_Node* p1, Ast_Node* p2, Ast_Node* p3, Ast_Node* p4, Ast_Node* p5, Ast_Node* p6) {
+        return new Ast_Node_Construction_LANG_DEF_BASE{std::vector<Ast_Node*>{p0, p1, p2, p3, p4, p5, p6}};
     }
     const char* Ast_Node_Construction_LANG_DEF_BASE::get_name() {
         return "Ast_Node_Construction_LANG_DEF_BASE";
@@ -48,23 +54,11 @@ Ast_Node_Construction_LANG_DEF_BASE::~Ast_Node_Construction_LANG_DEF_BASE() {}
                     << ",\n    \"bin\": \"out.bin\",\n    \"version\": \"0.1.0\"\n   },\n";
                 children[3]->traverse();
                 children[4]->traverse();
+                auto sr = user_data["start_rule"];
+                out_stream << "    \"start_rule\": " << sr << ",\n";
                 children[5]->traverse();
-                children[6]->traverse();
+                //children[6]->traverse();
                 out_stream << "\n}\n";
-            
-    }
-Ast_Node_START_DEF::~Ast_Node_START_DEF() {}
-Ast_Node_Construction_START_DEF_BASE::~Ast_Node_Construction_START_DEF_BASE() {}
-
-    Ast_Node_Construction_START_DEF_BASE* Ast_Node_Construction_START_DEF_BASE::make(Ast_Node* p0, Ast_Node* p1, Ast_Node* p2, Ast_Node* p3) {
-        return new Ast_Node_Construction_START_DEF_BASE{std::vector<Ast_Node*>{p0, p1, p2, p3}};
-    }
-    const char* Ast_Node_Construction_START_DEF_BASE::get_name() {
-        return "Ast_Node_Construction_START_DEF_BASE";
-    }
-    void Ast_Node_Construction_START_DEF_BASE::traverse() {
-
-                out_stream << "    \"start_rule\": " << dynamic_cast<Ast_Node_Token*>(children[2])->token.value << ",\n";
             
     }
 Ast_Node_TOKEN::~Ast_Node_TOKEN() {}
@@ -281,6 +275,25 @@ Ast_Node_Construction_RULE_BASE::~Ast_Node_Construction_RULE_BASE() {}
                 out_stream << "        \"name\": " << dynamic_cast<Ast_Node_Token*>(children[1])->token.value << ",\n";
                 out_stream << "        \"constructions\": [\n";
                 children[2]->traverse();
+                out_stream << "\n        ]\n";
+                out_stream << "    }";
+            
+    }
+Ast_Node_Construction_RULE_WITH_START::~Ast_Node_Construction_RULE_WITH_START() {}
+
+    Ast_Node_Construction_RULE_WITH_START* Ast_Node_Construction_RULE_WITH_START::make(Ast_Node* p0, Ast_Node* p1, Ast_Node* p2, Ast_Node* p3, Ast_Node* p4, Ast_Node* p5, Ast_Node* p6) {
+        return new Ast_Node_Construction_RULE_WITH_START{std::vector<Ast_Node*>{p0, p1, p2, p3, p4, p5, p6}};
+    }
+    const char* Ast_Node_Construction_RULE_WITH_START::get_name() {
+        return "Ast_Node_Construction_RULE_WITH_START";
+    }
+    void Ast_Node_Construction_RULE_WITH_START::traverse() {
+
+                user_data["start_rule"] = dynamic_cast<Ast_Node_Token*>(children[1])->token.value;
+                out_stream << "    {\n";
+                out_stream << "        \"name\": " << dynamic_cast<Ast_Node_Token*>(children[1])->token.value << ",\n";
+                out_stream << "        \"constructions\": [\n";
+                children[5]->traverse();
                 out_stream << "\n        ]\n";
                 out_stream << "    }";
             

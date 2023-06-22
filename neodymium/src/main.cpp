@@ -5,6 +5,7 @@
 #include "tokens.hpp"
 #include "lexer.hpp"
 #include <fstream>
+#include <unordered_map>
 
 extern Ast_Node* ast_root;
 extern void yyparse();

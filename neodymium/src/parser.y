@@ -32,7 +32,6 @@ std::ofstream out_stream;
 %token <ast_node>TKN_ID_LITERAL_CPP
 
 %type <ast_node>lang_def
-%type <ast_node>start_def
 %type <ast_node>token
 %type <ast_node>tokens_list
 %type <ast_node>tokens_def
@@ -51,8 +50,7 @@ std::ofstream out_stream;
 %start lang_def
 %%
 
-lang_def : TKN_ID_LPAREN TKN_ID_KEYWORD_LANG TKN_ID_LITERAL_STRING tokens_def rules_def start_def main_def TKN_ID_RPAREN { $$ = Ast_Node_Construction_LANG_DEF_BASE::make($1, $2, $3, $4, $5, $6, $7, $8); ast_root = $$; }
-start_def : TKN_ID_LPAREN TKN_ID_KEYWORD_START TKN_ID_LITERAL_STRING TKN_ID_RPAREN { $$ = Ast_Node_Construction_START_DEF_BASE::make($1, $2, $3, $4);}
+lang_def : TKN_ID_LPAREN TKN_ID_KEYWORD_LANG TKN_ID_LITERAL_STRING tokens_def rules_def main_def TKN_ID_RPAREN { $$ = Ast_Node_Construction_LANG_DEF_BASE::make($1, $2, $3, $4, $5, $6, $7); ast_root = $$; }
 token : TKN_ID_LPAREN TKN_ID_KEYWORD_TEXT TKN_ID_LITERAL_STRING TKN_ID_LITERAL_STRING TKN_ID_RPAREN { $$ = Ast_Node_Construction_TOKEN_TEXT::make($1, $2, $3, $4, $5);}
 | TKN_ID_LPAREN TKN_ID_KEYWORD_REGEX TKN_ID_LITERAL_STRING TKN_ID_LITERAL_STRING TKN_ID_RPAREN { $$ = Ast_Node_Construction_TOKEN_REGEX::make($1, $2, $3, $4, $5);}
 tokens_list : token { $$ = Ast_Node_Construction_TOKENS_LIST_BASE::make($1);}
@@ -67,6 +65,7 @@ constructions_list : construction { $$ = Ast_Node_Construction_CONSTRUCTIONS_LIS
 | construction constructions_list { $$ = Ast_Node_Construction_CONSTRUCTIONS_LIST_RECURSIVE::make($1, $2);}
 constructions_def : TKN_ID_LPAREN TKN_ID_KEYWORD_CONSTRUCTIONS constructions_list TKN_ID_RPAREN { $$ = Ast_Node_Construction_CONSTRUCTIONS_DEF_BASE::make($1, $2, $3, $4);}
 rule : TKN_ID_LPAREN TKN_ID_LITERAL_STRING constructions_def TKN_ID_RPAREN { $$ = Ast_Node_Construction_RULE_BASE::make($1, $2, $3, $4);}
+| TKN_ID_LPAREN TKN_ID_LITERAL_STRING TKN_ID_LPAREN TKN_ID_KEYWORD_START TKN_ID_RPAREN constructions_def TKN_ID_RPAREN { $$ = Ast_Node_Construction_RULE_WITH_START::make($1, $2, $3, $4, $5, $6, $7);}
 rules_list : rule { $$ = Ast_Node_Construction_RULES_LIST_BASE::make($1);}
 | rule rules_list { $$ = Ast_Node_Construction_RULES_LIST_RECURSIVE::make($1, $2);}
 rules_def : TKN_ID_LPAREN TKN_ID_KEYWORD_RULES rules_list TKN_ID_RPAREN { $$ = Ast_Node_Construction_RULES_DEF_BASE::make($1, $2, $3, $4);}
