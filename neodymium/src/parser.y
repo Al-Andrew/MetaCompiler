@@ -70,12 +70,13 @@ token : TKN_ID_LPAREN TKN_ID_KEYWORD_TEXT TKN_ID_LITERAL_STRING TKN_ID_LITERAL_S
 tokens_list : token { $$ = Ast_Node_Construction_TOKENS_LIST_BASE::make($1);}
 | token tokens_list { $$ = Ast_Node_Construction_TOKENS_LIST_RECURSIVE::make($1, $2);}
 tokens_def : TKN_ID_LPAREN TKN_ID_KEYWORD_TOKENS tokens_list TKN_ID_RPAREN { $$ = Ast_Node_Construction_TOKENS_DEF_BASE::make($1, $2, $3, $4);}
-ca_param : TKN_ID_COMPONENT_ACTION { $$ = Ast_Node_Construction_CA_PARAM_CA::make($1);}
+ca_param : TKN_ID_COMPONENT_ACTION_PARAM { $$ = Ast_Node_Construction_CA_PARAM_CA::make($1);}
 | TKN_ID_LITERAL_CPP { $$ = Ast_Node_Construction_CA_PARAM_CPP::make($1);}
 component_action_param_list : ca_param { $$ = Ast_Node_Construction_COMPONENT_ACTION_PARAM_LIST_BASE_CA::make($1);}
 | ca_param component_action_param_list { $$ = Ast_Node_Construction_COMPONENT_ACTION_PARAM_LIST_RECURSIVE::make($1, $2);}
 action_expand : TKN_ID_LITERAL_CPP { $$ = Ast_Node_Construction_ACTION_EXPAND_CPP_LITERAL::make($1);}
-| TKN_ID_LPAREN TKN_ID_COMPONENT_ACTION component_action_param_list TKN_ID_RPAREN { $$ = Ast_Node_Construction_ACTION_EXPAND_COMPONENT_ACTION::make($1, $2, $3, $4);}
+| TKN_ID_LPAREN TKN_ID_COMPONENT_ACTION component_action_param_list TKN_ID_RPAREN { $$ = Ast_Node_Construction_ACTION_EXPAND_COMPONENT_ACTION_W_PARAMS::make($1, $2, $3, $4);}
+| TKN_ID_LPAREN TKN_ID_COMPONENT_ACTION TKN_ID_RPAREN { $$ = Ast_Node_Construction_ACTION_EXPAND_COMPONENT_ACTION_WO_PARAMS::make($1, $2, $3);}
 action_expand_list : action_expand { $$ = Ast_Node_Construction_ACTION_EXPAND_LIST_BASE::make($1);}
 | action_expand action_expand_list { $$ = Ast_Node_Construction_ACTION_EXPAND_LIST_RECURSIVE::make($1, $2);}
 action_def : TKN_ID_LPAREN TKN_ID_KEYWORD_ACTION action_expand_list TKN_ID_RPAREN { $$ = Ast_Node_Construction_ACTION_DEF_BASE::make($1, $2, $3, $4);}
@@ -91,7 +92,7 @@ rule : TKN_ID_LPAREN TKN_ID_LITERAL_STRING constructions_def TKN_ID_RPAREN { $$ 
 rules_list : rule { $$ = Ast_Node_Construction_RULES_LIST_BASE::make($1);}
 | rule rules_list { $$ = Ast_Node_Construction_RULES_LIST_RECURSIVE::make($1, $2);}
 rules_def : TKN_ID_LPAREN TKN_ID_KEYWORD_RULES rules_list TKN_ID_RPAREN { $$ = Ast_Node_Construction_RULES_DEF_BASE::make($1, $2, $3, $4);}
-main_def : TKN_ID_LPAREN TKN_ID_KEYWORD_MAIN TKN_ID_LITERAL_CPP TKN_ID_RPAREN { $$ = Ast_Node_Construction_MAIN_DEF_BASE::make($1, $2, $3, $4);}
+main_def : TKN_ID_LPAREN TKN_ID_KEYWORD_MAIN action_expand_list TKN_ID_RPAREN { $$ = Ast_Node_Construction_MAIN_DEF_BASE::make($1, $2, $3, $4);}
 component_action : TKN_ID_LPAREN TKN_ID_KEYWORD_ACTION TKN_ID_LITERAL_STRING TKN_ID_LITERAL_CPP TKN_ID_RPAREN { $$ = Ast_Node_Construction_COMPONENT_ACTION_BASE::make($1, $2, $3, $4, $5);}
 component_action_list : component_action { $$ = Ast_Node_Construction_COMPONENT_ACTION_LIST_BASE::make($1);}
 | component_action component_action_list { $$ = Ast_Node_Construction_COMPONENT_ACTION_LIST_RECURSIVE::make($1, $2);}

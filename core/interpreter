@@ -1,8 +1,27 @@
 (component "interpreter"
-    (action "printnv" `
-        printf("%s\n", dynamic_cast<Ast_Node_Token*>($1)->token.value.c_str());
+    (action "printv" `
+        printf("%s\n", dynamic_cast<Ast_Node_Token*>($0)->token.value.c_str());
     `)
     (action "prints" `
-        printf("%s\n", $1);
+        printf("%s\n", $0);
+    `)
+    (action "printf1v" `
+        printf($0, dynamic_cast<Ast_Node_Token*>($1)->token.value.c_str());
+    `)
+    (action "default_main" `
+#include <stdio.h>
+#include "ast.hpp"
+
+extern FILE* yyin;
+extern Ast_Node* ast_root;
+extern void yyparse();
+
+int main(int argc, char** argv) {
+    yyin=fopen(argv[1],"r");
+    yyparse();
+    ast_root->traverse();
+    return 0;
+}
+
     `)
 )

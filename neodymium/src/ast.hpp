@@ -222,12 +222,23 @@ struct Ast_Node_Construction_ACTION_EXPAND_CPP_LITERAL : public Ast_Node_ACTION_
     virtual void traverse() override;
 };
 
-struct Ast_Node_Construction_ACTION_EXPAND_COMPONENT_ACTION : public Ast_Node_ACTION_EXPAND {
-    Ast_Node_Construction_ACTION_EXPAND_COMPONENT_ACTION(std::vector<Ast_Node*> children) : Ast_Node_ACTION_EXPAND(children) {}
+struct Ast_Node_Construction_ACTION_EXPAND_COMPONENT_ACTION_W_PARAMS : public Ast_Node_ACTION_EXPAND {
+    Ast_Node_Construction_ACTION_EXPAND_COMPONENT_ACTION_W_PARAMS(std::vector<Ast_Node*> children) : Ast_Node_ACTION_EXPAND(children) {}
 
-    virtual ~Ast_Node_Construction_ACTION_EXPAND_COMPONENT_ACTION();
+    virtual ~Ast_Node_Construction_ACTION_EXPAND_COMPONENT_ACTION_W_PARAMS();
 
-    static Ast_Node_Construction_ACTION_EXPAND_COMPONENT_ACTION* make(Ast_Node* p0, Ast_Node* p1, Ast_Node* p2, Ast_Node* p3);
+    static Ast_Node_Construction_ACTION_EXPAND_COMPONENT_ACTION_W_PARAMS* make(Ast_Node* p0, Ast_Node* p1, Ast_Node* p2, Ast_Node* p3);
+
+    virtual const char* get_name() override;
+    virtual void traverse() override;
+};
+
+struct Ast_Node_Construction_ACTION_EXPAND_COMPONENT_ACTION_WO_PARAMS : public Ast_Node_ACTION_EXPAND {
+    Ast_Node_Construction_ACTION_EXPAND_COMPONENT_ACTION_WO_PARAMS(std::vector<Ast_Node*> children) : Ast_Node_ACTION_EXPAND(children) {}
+
+    virtual ~Ast_Node_Construction_ACTION_EXPAND_COMPONENT_ACTION_WO_PARAMS();
+
+    static Ast_Node_Construction_ACTION_EXPAND_COMPONENT_ACTION_WO_PARAMS* make(Ast_Node* p0, Ast_Node* p1, Ast_Node* p2);
 
     virtual const char* get_name() override;
     virtual void traverse() override;
